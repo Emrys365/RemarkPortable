@@ -27,29 +27,20 @@ function loadContent()
     (x[i]).parentNode.removeChild(x[i]);
   }
 
-  slideshow = remark.create();
+  slideshow = remark.create({ratio: "4:3"});
+  // slideshow = remark.create({ratio: "16:9"});
   slideshow.gotoFirstSlide();
 }
 
-window.onload = function () 
-{
-  // Hide buttons on fullscreen
-  var btn_load = document.getElementById('load');
-  var btn_file = document.getElementById('file');
-
-  window.addEventListener('resize', function(event){
-    if (!window.screenTop && !window.screenY) 
-    {
-      btn_load.style.display = "none";
-      btn_file.style.display = "none";
-    }
-    else
-    {
-      btn_load.style.display = "inline";
-      btn_file.style.display = "inline";
-    }
-  });
-};
-
 
 loadContent();
+
+// Automatically set the page size to support print to PDF
+// https://github.com/gnab/remark/issues/50#issuecomment-321141963
+(function() {
+  var d = document, s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css";
+  s.innerHTML = "@page { size: " + r.style.width + " " + r.style.height +"; margin: 0; }";
+  d.head.appendChild(s);
+})();

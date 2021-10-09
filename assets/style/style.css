@@ -1,32 +1,214 @@
 @font-face{
   font-family: 'Droid Serif';
-  src: url('./fonts/DroidSerif.ttf');
+  src: url('../fonts/DroidSerif.ttf');
 }
 
 @font-face{
   font-family: 'Yanone Kaffeesatz';
-  src: url('./fonts/YanoneKaffeesatz.otf');
+  src: url('../fonts/YanoneKaffeesatz.otf');
 }
 
 @font-face{
   font-family: 'Ubuntu Mono';
-  src: url('./fonts/UbuntuMono.ttf');
+  src: url('../fonts/UbuntuMono.ttf');
 }
 
-body { font-family: 'Droid Serif'; }
+@font-face{
+  font-family: 'Open Sans';
+  src: url('../fonts/OpenSans.ttf');
+}
+@font-face{
+  font-family: 'Open Sans';
+  src: url('../fonts/OpenSans-Bold.ttf');
+  font-weight: bold;
+}
+@font-face{
+  font-family: 'Open Sans';
+  src: url('../fonts/OpenSans-Italic.ttf');
+  font-style: italic;
+}
+@font-face{
+  font-family: 'Open Sans';
+  src: url('../fonts/OpenSans-BoldItalic.ttf');
+  font-weight: bold;
+  font-style: italic;
+}
+
+@font-face{
+  font-family: 'Grandstander';
+  src: url('../fonts/Grandstander.ttf');
+}
+@font-face{
+  font-family: 'Grandstander';
+  src: url('../fonts/Grandstander-Bold.ttf');
+  font-weight: bold;
+}
+@font-face{
+  font-family: 'Grandstander';
+  src: url('../fonts/Grandstander-Italic.ttf');
+  font-style: italic;
+}
+@font-face{
+  font-family: 'Grandstander';
+  src: url('../fonts/Grandstander-BoldItalic.ttf');
+  font-weight: bold;
+  font-style: italic;
+}
+
+body { font-family: 'Open Sans'; }
 
 h1, h2, h3 {
-  font-family: 'Yanone Kaffeesatz';
-  font-weight: normal;
+  font-family: 'Open Sans';
+  font-weight: bold;
 }
 
 .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
 
 .red {color: red;}
+.blue {color: blue;}
+.gray {color: gray;}
+.white {color: white;}
+.darkblue {color: #203D6A;}
+.orange {color: #E27748;}
+
+.bold {font-weight: bold;}
+.italic {font-style: italic;}
+.bolditalic {font-weight: bold; font-style: italic;}
+.cute {font-family: 'Grandstander';}
+
+.left {text-align: left;}
+.center {text-align: center;}
+.right {text-align: right;}
 
 .footnote { 
-	font-family: 'Ubuntu Mono';
-	position: absolute;
-	left: 5%;
-	bottom: 5%;
+    font-family: 'Ubuntu Mono';
+    position: absolute;
+    left: 5%;
+    bottom: 8%;
+}
+
+/* Overwrite the default config */
+.remark-slide-number {
+  color: white;
+  opacity: 1.0;
+  font-size: 14px;
+  bottom: 3px;
+  right: 15px;
+}
+
+.remark-slide-content > h1:first-of-type {
+  margin-top: 55px;
+  margin-bottom: 18.7px;
+  font-size: 38px;
+}
+
+/* Set all <br/> to unselectable */
+.unselectable {
+    -webkit-user-select: none; /* Safari */        
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE10+/Edge */
+    user-select: none; /* Standard */
+}
+
+
+/* Header/Footer stuff */
+.my-header {
+  display: inline-block;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  height: 70px;
+  width: 100%;
+  text-align: left;
+  color: white;
+  font-size: 40px;
+}
+
+.my-header img {
+  float: left;
+  width: 5%;
+  margin-left: 1%;
+  margin-right: 1%;
+  margin-top: 1.25%;
+}
+
+.my-header span {
+  display: table-cell;
+  height: 70px;
+  width: 92%;
+  padding-left: 1%;
+  padding-right: 1%;
+  vertical-align: middle;
+  color: white;
+}
+
+.my-watermark {
+  display: inline-block;
+  position: absolute;
+  bottom: 24px;
+  right: -70px;
+  height: 45%;
+  width: 40%;
+}
+
+.unselectable {
+  user-drag: none; 
+  user-select: none;
+  -moz-user-select: none;
+  -webkit-user-drag: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  pointer-events: none;
+}
+
+.crop {
+  overflow: hidden;
+}
+
+.my-footer {
+  display: inline-block;
+  position: absolute;
+  bottom: 0px;
+  left: 0px;
+  height: 26px;
+  font-size: 14px;
+  width: 100%;
+  color: white;
+}
+
+.my-footer span {
+  display: table-cell;
+  position: absolute;
+  left: 0px;
+  height: 22px;
+  padding-top: 4px;
+  vertical-align: middle;
+  color: white;
+}
+
+/* Fix the printing issue */
+/* https://github.com/gnab/remark/issues/50#issuecomment-223887379 */
+/* https://github.com/gnab/remark/issues/50#issuecomment-321141963 */
+/* This works with Chrome, but not with Safari */
+/* Also not that this does not work with the presenter mode */
+
+@media print {
+  .remark-slide-scaler {
+    width: 100% !important;
+    height: 100% !important;
+    transform: scale(1) !important;
+    top: 0 !important;
+    left: 0 !important;
+  }
+
+  /* Keep the watermark at the same position when printed */
+  .my-watermark {
+    bottom: 1.7%;
+    right: -9%;
+  }
+
+  .crop {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
 }
