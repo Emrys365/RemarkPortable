@@ -4,6 +4,12 @@
     <title>Title</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <link rel="stylesheet" type="text/css" href="./assets/style/style.css"/>
+    <link rel="stylesheet" type="text/css" href="./assets/style/inlinecode.css"/>
+    <link rel="stylesheet" type="text/css" href="./assets/style/blockquote.css"/>
+    <link rel="stylesheet" type="text/css" href="./assets/style/table.css"/>
+    <link rel="stylesheet" type="text/css" href="./assets/style/multicolumn.css"/>
+    <link rel="stylesheet" type="text/css" href="./assets/style/header_footer.css"/>
+    <link rel="icon" href="./favicon.ico">
   </head>
 
   <body>
@@ -38,7 +44,7 @@ layout: true
   <img draggable="false" (dragstart)="false;" class="unselectable" src="./assets/images/logo_sjtu.png"/>
   <span style="color: #FFC000;">Section Title</span>
 </div>
-<div class="my-watermark crop">
+<div class="my-watermark crop" style="z-index: -1;">
   <img draggable="false" (dragstart)="false;" class="unselectable" src="./assets/images/logo_sjtu.png" style="width: 100%; opacity: 1.0; user-select: none; transform:rotate(315deg);"/>
 </div>
 <div class="my-footer">
@@ -63,18 +69,33 @@ Oh yeah, it's also possible to include notes!
 
 ---
 
-# Some other trials
+# Some other formats
 
-| Header1 | Header2 | Header3 | Header4 |
-|---|---|---|---|
-| Name1 | 1 | 2 | 3 |
-| Name2 | - | 3.3 | - |
+| Header1 | Header2 | Long Header3 | Long Header4 |
+|:---|:---:|---|---:|
+| Name1 | 1 | 2 `baseline` | 3 |
+| Name2 | - | .red[3.3] | - |
 | Name3 | 0.5 | -0.1 | 2.7 |
 
-> Some comment here
+> Some `comment` here<br>
 
-???
-Oh yeah, it's also possible to include notes!
+> Equation: \\( \alpha \times f(x) \\)
+
+> * indent
+
+```javascript
+console.log("It's markdown. How much simpler can it get?")
+```
+
+---
+
+# Customized Markdown Macros
+
+![:scale 20%](./assets/images/logo_sjtu.png)
+
+![:upper](The Uppercase macro)
+
+![:random one, of, these, words]
 
 ---
 
@@ -82,23 +103,52 @@ class: left
 
 # Simple and easy
 
-```javascript
-console.log("It's markdown. How much simpler can it get?")
-```
-
 MathJax is also supported!
 
+.left-column-33[
 \\( \bar{x} \\) or \\( \hat{x} \\)
-<br/>
+]
+
+.left-column-66[
 $$x = {-b \pm \sqrt{b^2-4ac} \over 2a}$$
-<br/>
-<br/>
-<br/>
+]
+
 **[RemarkPortable](https://github.com/BenTearzz/RemarkPortable)**, created from the project **[Remark](https://github.com/gnab/remark)** 
 
 [![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 .footnote[.red[*] You can also include a footnote! ]
+
+---
+
+# A lot of text
+
+.justify[
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+Urna neque viverra justo nec ultrices dui sapien eget.
+Porttitor leo a diam sollicitudin.
+Lobortis elementum nibh tellus molestie nunc non blandit massa enim.
+Massa id neque aliquam vestibulum.
+Sed risus ultricies tristique nulla aliquet enim.
+Aliquam id diam maecenas ultricies mi eget mauris pharetra et.
+Vestibulum mattis ullamcorper velit sed ullamcorper morbi.
+At auctor urna nunc id.
+Semper viverra nam libero justo laoreet sit amet.
+Sem et tortor consequat id porta nibh venenatis.
+Lectus nulla at volutpat diam ut venenatis tellus.
+Nulla malesuada pellentesque elit eget gravida cum sociis natoque.
+Morbi blandit cursus risus at ultrices.
+Neque egestas congue quisque egestas diam in arcu.
+Iaculis urna id volutpat lacus laoreet non.
+Massa enim nec dui nunc mattis.
+Vitae congue mauris rhoncus aenean vel elit scelerisque mauris.
+Massa tincidunt nunc pulvinar sapien.
+Volutpat lacus laoreet non curabitur gravida arcu ac.
+]
+
+$$f\_{xz}(x) f\_{xz}(x)$$
+
+中文
 
     </textarea>
     <!-- Presentation End -->

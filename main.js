@@ -6,11 +6,11 @@ function loadFile(event)
   var selectedFile = event.target.files[0];
 
   var reader = new FileReader();
-  reader.onload = function(event) 
+  reader.onload = function(event)
   {
     document.getElementById('source').innerHTML = event.target.result;
   };
-  
+
   reader.readAsText(selectedFile);
 }
 
@@ -26,6 +26,26 @@ function loadContent()
   {
     (x[i]).parentNode.removeChild(x[i]);
   }
+
+  // ********************************
+  // Define Markdown Macros
+  // https://github.com/gnab/remark/issues/72
+  remark.macros.upper = function () {
+    // `this` is the value in the parenthesis, or undefined if left out
+    return this.toUpperCase();
+  };
+
+  remark.macros.random = function () {
+    // params are passed as function arguments: ["one", "of", "these", "words"]
+    var i = Math.floor(Math.random() * arguments.length);
+    return arguments[i];
+  };
+
+  remark.macros.scale = function (percentage) {
+    var url = this;
+    return '<img src="' + url + '" style="width: ' + percentage + '" />';
+  };
+  // ********************************
 
   slideshow = remark.create({ratio: "4:3"});
   // slideshow = remark.create({ratio: "16:9"});

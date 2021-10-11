@@ -1,0 +1,20 @@
+/* Blockquote styling for `> ` in Markdown
+https://gist.github.com/darryl-snow/3816983 */
+.remark-slide-content > blockquote {
+  background: #f9f9f9;
+  border-left: 10px solid #ccc;
+  color: #888;
+  margin: 1.5em 10px;
+  padding: .5em 10px;
+  quotes: "\201C""\201D""\2018""\2019";
+}
+/* .remark-slide-content > blockquote:before {
+  color: #ccc;
+  content: open-quote;
+  line-height: .1em;
+  margin-right: .25em;
+  vertical-align: -.4em;
+} */
+.remark-slide-content > blockquote p {
+  display: inline;
+}
