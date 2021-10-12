@@ -84,21 +84,24 @@ Oh yeah, it's also possible to include notes!
 > * indent
 
 ```javascript
+*** sdf **
 console.log("It's markdown. How much simpler can it get?")
 ```
+
+[link to slide 5](#simple_and_easy)
 
 ---
 
 # Customized Markdown Macros
 
-![:scale 20%](./assets/images/logo_sjtu.png)
+[![:scale 20%](./assets/images/logo_sjtu.png)](https://x-lance.sjtu.edu.cn/)
 
 ![:upper](The Uppercase macro)
 
 ![:random one, of, these, words]
 
 ---
-
+name: simple_and_easy
 class: left
 
 # Simple and easy
@@ -116,6 +119,8 @@ $$x = {-b \pm \sqrt{b^2-4ac} \over 2a}$$
 **[RemarkPortable](https://github.com/BenTearzz/RemarkPortable)**, created from the project **[Remark](https://github.com/gnab/remark)** 
 
 [![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+This is really cool! .red[*]
 
 .footnote[.red[*] You can also include a footnote! ]
 
@@ -149,6 +154,9 @@ Volutpat lacus laoreet non curabitur gravida arcu ac.
 $$f\_{xz}(x) f\_{xz}(x)$$
 
 中文
+
+???
+Any content below `???` is regarded as the presenter notes.
 
     </textarea>
     <!-- Presentation End -->

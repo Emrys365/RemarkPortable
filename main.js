@@ -47,9 +47,27 @@ function loadContent()
   };
   // ********************************
 
-  slideshow = remark.create({ratio: "4:3"});
+  slideshow = remark.create({
+    // Set the slideshow display ratio
+    ratio: "4:3",
+    // Customize slide number label, either using a format string
+    // https://github.com/gnab/remark/issues/130#issuecomment-47468524
+    slideNumberFormat: "%current% / %total%",
+    // .. or by using a format function
+    // slideNumberFormat: function (current, total) {
+    //   return current + " / " + total;
+    // },
+    // Enable or disable counting of incremental slides in the slide counting
+    countIncrementalSlides: false,
+    //*********** code highlighting related ***********//
+    highlightLanguage: "javascript",  // https://github.com/isagalaev/highlight.js/tree/master/src/languages
+    highlightStyle: "github",         // https://github.com/gnab/remark/wiki/Configuration#highlighting
+    highlightLines: false,            // true to highlight background of code lines prefixed with *
+    // Inside code blocks, highlight (the background of) content between special delimiters
+    highlightSpans: false,            // true to use `backticks` as delimiters
+  });
   // slideshow = remark.create({ratio: "16:9"});
-  slideshow.gotoFirstSlide();
+  // slideshow.gotoFirstSlide();         // uncomment this line to always start from the first slide
 }
 
 

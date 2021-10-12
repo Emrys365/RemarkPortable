@@ -89,17 +89,22 @@ h1, h2, h3 {
 }
 
 /* Overwrite the default config */
+.remark-slide {
+  position: relative;
+  z-index: -2;
+}
+
+.remark-slide-content {
+  position: relative;
+  z-index: -1;
+}
+
 .remark-slide-number {
   color: white;
   opacity: 1.0;
   font-size: 14px;
   bottom: 3px;
   right: 15px;
-}
-
-.remark-slide-content {
-  position: relative;
-  z-index: -1;
 }
 
 .remark-slide-content > h1:first-of-type {
@@ -133,9 +138,11 @@ h1, h2, h3 {
   }
 
   /* Keep the watermark at the same position when printed */
+  /* Note: the hack does not work now, so hide the watermark instead */
   .my-watermark {
-    bottom: 1.7%;
-    right: -9%;
+    /* bottom: 1.7%;
+    right: -9%; */
+    display: none !important;
   }
 
   .crop {

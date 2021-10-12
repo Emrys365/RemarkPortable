@@ -36,6 +36,14 @@ tr:nth-of-type(2n) {
   background-color: #f6f8fa;  /* Change the background-color of even rows here */
 }
 
+/* Reset styles for the shortcut helper */
+.light-keys tr:nth-of-type(2n) {background-color: black;}
+.light-keys tr:hover {background-color: black;}
+.light-keys table {border: none;}
+.light-keys tr {border: none;}
+.light-keys td {border: none;}
+.light-keys th {border: none;}
+
 tr th {
   background-color: white;    /* Change the background-color of heading here */
 }
