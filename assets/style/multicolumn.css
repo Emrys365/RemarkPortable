@@ -5,6 +5,12 @@
 .left-column-33  { width: 33%; float: left; }
 .right-column-66 { width: 66%; float: right; }
 
+.left-column-44  { width: 44%; float: left; }
+.right-column-55 { width: 55%; float: right; }
+
+.left-column-55  { width: 55%; float: left; }
+.right-column-44 { width: 44%; float: right; }
+
 .left-column-66  { width: 66%; float: left; }
 .right-column-33 { width: 33%; float: right; }
 

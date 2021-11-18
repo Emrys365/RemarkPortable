@@ -62,12 +62,17 @@ h1, h2, h3 {
   font-weight: bold;
 }
 
+h1 {
+  margin-left: -13px;
+}
+
 .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
 
 .red {color: red;}
 .blue {color: blue;}
 .gray {color: gray;}
 .white {color: white;}
+.darkred {color: #B02418;}
 .darkblue {color: #203D6A;}
 .orange {color: #E27748;}
 
@@ -84,8 +89,10 @@ h1, h2, h3 {
 .footnote { 
   font-family: 'Ubuntu Mono';
   position: absolute;
+  margin-right: 14px;
+  font-size: 14px;
   left: 5%;
-  bottom: 8%;
+  bottom: 30px;
 }
 
 /* Overwrite the default config */

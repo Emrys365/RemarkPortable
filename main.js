@@ -59,8 +59,12 @@ function loadContent()
     // },
     // Enable or disable counting of incremental slides in the slide counting
     countIncrementalSlides: false,
+    // enable or disable scrolling-based navigation
+    navigation: {
+      scroll: false,
+    },
     //*********** code highlighting related ***********//
-    highlightLanguage: "javascript",  // https://github.com/isagalaev/highlight.js/tree/master/src/languages
+    highlightLanguage: "python",  // https://github.com/isagalaev/highlight.js/tree/master/src/languages
     highlightStyle: "github",         // https://github.com/gnab/remark/wiki/Configuration#highlighting
     highlightLines: false,            // true to highlight background of code lines prefixed with *
     // Inside code blocks, highlight (the background of) content between special delimiters
