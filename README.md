@@ -50,6 +50,10 @@ Some new functions are introdued based on the original repository in [BenStigsen
   * colors: `.red[...]`, `.blue[...]`, etc.
   * font styles: `.bold[...]`, `.italic[...]`, `.bolditalic[...]`, `.cute[...]`
   * text alignment: `.left[...]`, `.right[...]`, `.center[...]`, `.justify[...]`
+  * two-column layout: `.left-column[...]`, `.right-column[...]`, etc.
 * Support for printing as slides (by default 4:3) with Chrome (not working with Safari)
+* Added custom cursor styles and keyboard shortcuts
+  * Press `l` or `L` to toggle the switch of a laser pointer
+  * Press `s` or `S` to toggle spotlight around the cursor
 
 ![preview](https://user-images.githubusercontent.com/18532145/136813819-9a926db1-25d8-47d5-9678-68250f076f73.gif)

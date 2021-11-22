@@ -29,7 +29,8 @@ td {
 /* Adding Striped Effect for even rows */
 
 tr {
-  background-color: transparent; /* Change the default background-color of rows here */
+  /* background-color: transparent; Change the default background-color of rows here */
+  background-color: white; /* Change the default background-color of rows here */
 }
 
 tr:nth-of-type(2n) {
