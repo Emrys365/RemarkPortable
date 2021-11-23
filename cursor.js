@@ -18,7 +18,7 @@ Mousetrap.bind(['l', 'L'], function() {
 
 
 Mousetrap.bind(['s', 'S'], function() {
-  if (mouseCursor.style.display === "none") {
+  if (mouseCursor.style.display === "none" || mouseCursor.style.display === "") {
     mouseCursor.style.display = "block"
     // window.addEventListener("mousemove", moveCursor)
     // wholePage.classList.add("hideCursor")

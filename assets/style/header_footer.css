@@ -30,12 +30,17 @@
 }
 
 .my-watermark {
-  display: inline-block;
+  background-image: url(../images/logo_sjtu.png);
+  display: block;
   position: absolute;
-  bottom: 24px;
-  right: -70px;
-  height: 45%;
-  width: 40%;
+  right: -17%;
+  bottom: -9%;
+  height: 60%;
+  width: 45%;
+  background-size: 80%;
+  background-repeat: no-repeat;
+  background-clip: border-box;
+  transform: rotate(315deg);
 }
 
 .unselectable {
@@ -46,10 +51,6 @@
   -webkit-user-select: none;
   -ms-user-select: none;
   pointer-events: none;
-}
-
-.crop {
-  overflow: hidden;
 }
 
 .my-footer {

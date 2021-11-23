@@ -101,6 +101,10 @@ h1 {
   z-index: -2;
 }
 
+.remark-slide-scaler {
+  overflow: hidden;
+}
+
 .remark-slide-content {
   position: relative;
   z-index: -1;
@@ -142,18 +146,5 @@ h1 {
     transform: scale(1) !important;
     top: 0 !important;
     left: 0 !important;
-  }
-
-  /* Keep the watermark at the same position when printed */
-  /* Note: the hack does not work now, so hide the watermark instead */
-  .my-watermark {
-    /* bottom: 1.7%;
-    right: -9%; */
-    display: none !important;
-  }
-
-  .crop {
-    overflow-x: hidden;
-    overflow-y: auto;
   }
 }

@@ -7,12 +7,13 @@
   height: 4rem;
   border: 2px solid black;
   border-radius: 50%;
-  background-color: #DF8244;
+  background-color: #ffee00;
   opacity: 0.45;
   position: absolute;
   transform: translate(-50%, -50%);
   pointer-events: none;
   z-index: 100;
+  display: none;
 }
 
 .hideCursor {
