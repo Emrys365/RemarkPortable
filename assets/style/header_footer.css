@@ -30,11 +30,11 @@
 }
 
 .my-watermark {
-  background-image: url(../images/logo_sjtu.png);
+  background-image: url(../images/logo_sjtu.svg);
   display: block;
   position: absolute;
-  right: -17%;
-  bottom: -9%;
+  right: -16.2%;
+  bottom: -10%;
   height: 60%;
   width: 45%;
   background-size: 80%;
