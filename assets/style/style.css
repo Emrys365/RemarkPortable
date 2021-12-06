@@ -80,6 +80,7 @@ h1 {
 .italic {font-style: italic;}
 .bolditalic {font-weight: bold; font-style: italic;}
 .cute {font-family: 'Grandstander';}
+.url {font-family: 'Ubuntu Mono';}
 
 .left {text-align: left;}
 .center {text-align: center;}
@@ -94,6 +95,13 @@ h1 {
   left: 5%;
   bottom: 30px;
 }
+
+.tiny {font-size: 6px;}
+.scriptsize {font-size: 10px;}
+.footnotesize {font-size: 14px;}
+.small {font-size: 17px;}
+.normalsize {font-size: 20px;}
+.large {font-size: 23px;}
 
 /* Overwrite the default config */
 .remark-slide {
