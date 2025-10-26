@@ -14,6 +14,30 @@ function loadFile(event)
   reader.readAsText(selectedFile);
 }
 
+function register_macros()
+{
+  // Define Markdown Macros
+  // https://github.com/gnab/remark/issues/72
+  remark.macros.upper = function () {
+    // Usage: ![:upper](xxx)
+    // `this` is the value in the parenthesis, or undefined if left out
+    return this.toUpperCase();
+  };
+
+  remark.macros.random = function () {
+    // Usage: ![:random xxx, yyy, zzz]
+    // params are passed as function arguments: ["one", "of", "these", "words"]
+    var i = Math.floor(Math.random() * arguments.length);
+    return arguments[i];
+  };
+
+  remark.macros.scale = function (percentage) {
+    // Usage: ![:scale 50%](/xxx/image)
+    var url = this;
+    return '<img src="' + url + '" style="width: ' + percentage + '" />';
+  };
+}
+
 // Rebuild slides and delete previous
 function loadContent()
 {
@@ -27,25 +51,7 @@ function loadContent()
     (x[i]).parentNode.removeChild(x[i]);
   }
 
-  // ********************************
-  // Define Markdown Macros
-  // https://github.com/gnab/remark/issues/72
-  remark.macros.upper = function () {
-    // `this` is the value in the parenthesis, or undefined if left out
-    return this.toUpperCase();
-  };
-
-  remark.macros.random = function () {
-    // params are passed as function arguments: ["one", "of", "these", "words"]
-    var i = Math.floor(Math.random() * arguments.length);
-    return arguments[i];
-  };
-
-  remark.macros.scale = function (percentage) {
-    var url = this;
-    return '<img src="' + url + '" style="width: ' + percentage + '" />';
-  };
-  // ********************************
+  register_macros();
 
   slideshow = remark.create({
     // Set the slideshow display ratio

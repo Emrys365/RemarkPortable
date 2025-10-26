@@ -54,6 +54,11 @@ Some new functions are introdued based on the original repository in [BenStigsen
 * Support for printing as slides (by default 4:3) with Chrome (not working with Safari)
 * Added custom cursor styles and keyboard shortcuts
   * Press `l` or `L` to toggle the switch of a laser pointer
-  * Press `s` or `S` to toggle spotlight around the cursor
+  * Press `s` to toggle spotlight around the cursor
+
+    When the spotlight is displayed:
+    * Press `S` to toggle the spotlight shape
+    * Press `+` or `=` to increment the spotlight size
+    * Press `-` or `_` to decrement the spotlight size
 
 ![preview](https://user-images.githubusercontent.com/18532145/136813819-9a926db1-25d8-47d5-9678-68250f076f73.gif)
