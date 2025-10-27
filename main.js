@@ -17,7 +17,7 @@ function loadFile(event)
 function register_macros()
 {
   // Define Markdown Macros
-  // https://github.com/gnab/remark/issues/72
+  // https://github.com/gnab/remark/issues/72#issuecomment-62225566
   remark.macros.upper = function () {
     // Usage: ![:upper](xxx)
     // `this` is the value in the parenthesis, or undefined if left out
@@ -67,14 +67,27 @@ function loadContent()
     countIncrementalSlides: false,
     // enable or disable scrolling-based navigation
     navigation: {
+      // Enable or disable navigating using scroll
+      // Default: true
+      // Alternatives: false
       scroll: false,
+
+      // Enable or disable navigation using touch
+      // Default: true
+      // Alternatives: false
+      touch: true,
+
+      // Enable or disable navigation using click
+      // Default: false
+      // Alternatives: true
+      click: false,
     },
     //*********** code highlighting related ***********//
     highlightLanguage: "python",  // https://github.com/isagalaev/highlight.js/tree/master/src/languages
     highlightStyle: "github",         // https://github.com/gnab/remark/wiki/Configuration#highlighting
-    highlightLines: false,            // true to highlight background of code lines prefixed with *
+    highlightLines: true,            // true to highlight background of code lines prefixed with *
     // Inside code blocks, highlight (the background of) content between special delimiters
-    highlightSpans: false,            // true to use `backticks` as delimiters
+    highlightSpans: true,            // true to use `backticks` as delimiters
   });
   // slideshow = remark.create({ratio: "16:9"});
   // slideshow.gotoFirstSlide();         // uncomment this line to always start from the first slide

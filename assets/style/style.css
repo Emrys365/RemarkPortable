@@ -87,6 +87,9 @@ h1 {
 .right {text-align: right;}
 .justify {text-align: justify;}
 
+.v-loose {line-height: 1.8;}
+.v-very-loose {line-height: 2.5;}
+
 .footnote { 
   font-family: 'Ubuntu Mono';
   position: absolute;
@@ -100,8 +103,20 @@ h1 {
 .scriptsize {font-size: 10px;}
 .footnotesize {font-size: 14px;}
 .small {font-size: 17px;}
+.midsize {font-size: 18px;}
 .normalsize {font-size: 20px;}
 .large {font-size: 23px;}
+.huge {font-size: 30px;}
+.titlesize {font-size: 45px;}
+.titlelarge {font-size: 60px;}
+.titlehuge {font-size: 100px;}
+
+/* Set list and ordered list item spacing */
+.remark-slide-content ul li,
+.remark-slide-content ol li {
+  margin-bottom: 0.4em;
+}
+
 
 /* Overwrite the default config */
 .remark-slide {
@@ -131,6 +146,11 @@ h1 {
   margin-bottom: 18.7px;
   font-size: 38px;
 }
+.remark-slide-content > p:first-of-type {
+  margin-top: 20px;
+  margin-bottom: 18.7px;
+}
+
 
 .unselectable {
   -webkit-user-select: none; /* Safari */        

@@ -6,6 +6,8 @@ blockquote {
   color: #888;
   padding: .5em 10px;
   quotes: "\201C""\201D""\2018""\2019";
+  /* expand to the full width of the slide */
+  width: calc(100% - 20px);
 }
 
 .remark-slide-content > blockquote {

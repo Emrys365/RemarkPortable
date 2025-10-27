@@ -37,7 +37,7 @@ The fonts included (Ubuntu Mono, Yanone Kaffeesatz and Droid Serif) are all from
 
 ### Additional Notes from [Emrys365](https://github.com/Emrys365/)
 
-This customized version is designed as a template for SJTU X-LANCE Lab.
+This customized version is designed as a template for SJTU AudioCC Lab.
 
 Some new functions are introdued based on the original repository in [BenStigsen/RemarkPortable](https://github.com/BenStigsen/RemarkPortable), including:
 
