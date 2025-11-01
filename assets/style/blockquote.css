@@ -23,3 +23,16 @@ blockquote {
 .remark-slide-content > blockquote p {
   display: inline;
 }
+
+/* blockquote in Callout */
+.remark-slide-content .callout blockquote {
+  color: inherit;
+  font-style: normal;
+  background-color: transparent;
+  border-inline-start: 2px solid hsl(calc(258 - 1), calc(88% * 1.01), calc(66% * 1.075));
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-inline-start: 24px;
+  margin-inline-start: 0;
+  margin-inline-end: 0;
+}
