@@ -1,0 +1,72 @@
+/* Obsidian-style callouts */
+.callout {
+  display: block;
+  overflow: hidden;
+  border-style: solid;
+  border-width: 0px;
+  border-radius: 4px;
+  margin: 1em 0;
+  /* mix-blend-mode: darken; */
+  padding: 12px 12px 12px 24px;
+  --callout-content-background: transparent;
+  --callout-content-padding: 0;
+  --callout-title-weight: bold;
+}
+.callout-note, .callout-info, .callout-todo {
+  border-color: rgba(8, 109, 221, 0.25);
+  background-color: rgb(228, 240, 255);
+  --title-color: rgb(8, 109, 221);
+  --callout-title-color: rgb(8, 109, 221);
+}
+.callout-tip {
+  border-color: rgba(0, 153, 51, 0.25);
+  background-color: rgb(237, 250, 237);
+  --title-color: rgb(0, 153, 51);
+  --callout-title-color: rgb(0, 153, 51);
+}
+.callout-warn, .callout-question {
+  border-color: rgba(236, 117, 0, 0.25);
+  background-color: rgb(255, 242, 230);
+  --title-color: rgb(236, 117, 0);
+  --callout-title-color: rgb(236, 117, 0);
+}
+.callout-danger {
+  border-color: rgba(255, 51, 51, 0.25);
+  background-color: rgb(255, 237, 237);
+  --title-color: rgb(255, 51, 51);
+  --callout-title-color: rgb(255, 51, 51);
+}
+.callout-example {
+  border-color: rgba(120, 82, 238, 0.25);
+  background-color: rgb(227, 218, 255);
+  --title-color: rgb(120, 82, 238);
+  --callout-title-color: rgb(120, 82, 238);
+}
+.callout-quote {
+  border-color: rgba(158, 158, 158, 0.25);
+  background-color: rgb(241, 241, 241);
+  --title-color: rgb(158, 158, 158);
+  --callout-title-color: rgb(158, 158, 158);
+}
+.callout .callout-title {
+  padding: 0;
+  display: flex;
+  gap: 4px;
+  color: var(--title-color);
+  line-height: 1.3;
+  align-items: flex-start;
+}
+.callout .callout-icon {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+}
+.callout .callout-title-inner {
+  font-weight: var(--callout-title-weight);
+  color: var(--callout-title-color);
+}
+.callout .callout-content {
+  overflow-x: auto;
+  padding: var(--callout-content-padding);
+  background-color: var(--callout-content-background);
+}
