@@ -46,11 +46,15 @@ Some new functions are introdued based on the original repository in [BenStigsen
 * Added watermark in the lower right corner: a rotated logo that is placed in the bottom layer
 * New default CSS styles for several Markdown elements (` `` `, `> ...`, table)
 * Several Markdown macros (image scaling, upper case converter, random word selector), and more can be extended in [main.js#L30](https://github.com/Emrys365/RemarkPortable/blob/sjtu/main.js#L30)
+  * Obsidian's callout-style block: `![:callout type](...)`, where `type` can be `info`, `note`,`todo`, `tip`, `warn`, `question`, `danger`, `example`, `todo`.
 * New [content classes](https://github.com/gnab/remark/wiki/Markdown#content-classes) for convenient use
   * colors: `.red[...]`, `.blue[...]`, etc.
   * font styles: `.bold[...]`, `.italic[...]`, `.bolditalic[...]`, `.cute[...]`
+  * font sizes: `.tiny[...]`, `.scriptsize[...]`, `.footnotesize[...]`, `.small[...]`, `.midsize[...]`, `.normalsize[...]`, `.large[...]`, `.huge[...]`, `.titlesize[...]`, `.titlelarge[...]`, `.titlehuge[...]`
+  * vetical spacing: `.v-loose[...]`, `.v-very-loose[...]`
   * text alignment: `.left[...]`, `.right[...]`, `.center[...]`, `.justify[...]`
   * two-column layout: `.left-column[...]`, `.right-column[...]`, etc.
+  * boxed text: `.box[...]`
 * Support for printing as slides (by default 4:3) with Chrome (not working with Safari)
 * Added custom cursor styles and keyboard shortcuts
   * Press `l` or `L` to toggle the switch of a laser pointer
