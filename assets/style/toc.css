@@ -1,0 +1,113 @@
+/* Table of Contents */
+/* Only supports Chrome browser */
+.remark-toc {
+  margin-left: 100px;
+  margin-top: 50px;
+  display: flex;
+  align-items: center;
+  color: #173D6E;
+}
+
+/* Override default link styles */
+.remark-toc a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Left Sidebar */
+.remark-toc .toc-sidebar {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  font-weight: bold;
+  margin-right: 60px;
+  padding: 16px 20px;
+}
+.remark-toc .toc-sidebar::before,
+.remark-toc .toc-sidebar::after {
+  content: "";
+  position: absolute;
+  width: 30px;
+  height: 25px;
+  border-color: #173D6E;
+  border-style: solid;
+}
+.remark-toc .toc-sidebar::before {
+  border-width: 9px 0 0 9px;
+  top: 0;
+  left: 0;
+}
+.remark-toc .toc-sidebar::after {
+  border-width: 0 9px 9px 0;
+  bottom: 0;
+  right: 0;
+}
+
+.remark-toc .toc-sidebar .toc-title-cn {
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  font-size: 72px;
+  font-weight: bold;
+  margin-top: 10px;
+  line-height: 1.1;
+  letter-spacing: 16px;
+}
+
+.remark-toc .toc-sidebar .toc-title-en {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 24px;
+  letter-spacing: 1px;
+  margin-left: -25px; /* get closer to 「 on the left */
+  margin-top: 50px;   /* get closer to 「 below */
+}
+
+/* Right Content List */
+.remark-toc .toc-content {
+  display: flex;
+  flex-direction: column;
+}
+.remark-toc .toc-content:has(> :nth-child(2)) {
+  gap: 55px;
+}
+.remark-toc .toc-content:has(> :nth-child(3)) {
+  gap: 35px;
+}
+.remark-toc .toc-content:has(> :nth-child(5)) {
+  gap: 25px;
+}
+.remark-toc .toc-content:has(> :nth-child(8)) {
+  gap: 10px;
+}
+.remark-toc .toc-content:has(> :nth-child(9)) {
+  gap: 0px;
+}
+
+.remark-toc .toc-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.remark-toc .toc-number {
+  background-color: #173D6E;
+  color: #fff;
+  font-weight: 900;
+  font-size: 24px;
+  border-radius: 6px;
+  text-shadow: 1px 1px 2px black;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.remark-toc .toc-text-box {
+  /* border: 2px dashed #999; */
+  padding: 10px 20px;
+  min-width: 450px;
+  font-size: 28px;
+  font-weight: bold;
+}

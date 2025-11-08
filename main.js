@@ -85,6 +85,84 @@ function register_macros()
          +   '</div>'
          + '</div>';
   }
+
+  remark.macros.toc = function () {
+    // Usage: ![:toc num1, num2, ...](lines of toc content in markdown)
+    // The content lines should start with *, -, +, >, or numbered list like 1., 2., etc.
+    // To add link to a TOC item, use the format: 【text】（link）
+    //
+    // Example:
+    // ![:toc 2,4](
+    // * 【Introduction】（#intro）
+    // * 【Usage】（#usage）
+    // * 【Examples】（#examples）
+    // * 【Conclusion】（#conclusion）
+    // )
+    // 
+    // Note: We cannot support standard markdown link format [text](link) here due to parsing issues.
+    var lines = this.split('\n');
+    var toc_items = [];
+    var num = 0;
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i].trim();
+      if (line.length === 0) {
+        continue;
+      }
+      // Extract number and text
+      var match = line.match(/^(\*|>|-|\+|\d+\.)\s+(.*)$/);
+      if (match) {
+        num++;
+        var text = match[2];
+        // Extract 【text】（link） if exists
+        var link_match = text.match(/^【(.*)】（(.*)）$/);
+        if (link_match) {
+          var display_text = link_match[1];
+          var link = link_match[2];
+          text = '<a href="' + link + '">' + remark.convert(display_text) + '</a>'
+        }
+        toc_items.push({
+          number: num,
+          text: text,
+          dim_class: ''
+        });
+      }
+    }
+
+    // get all numbers in arguments to dim toc items
+    var not_dim_numbers = [];
+    for (var k = 0; k < arguments.length; k++) {
+      var n = parseInt(arguments[k].trim());
+      if (!isNaN(n) && n > 0 && n <= toc_items.length) {
+        not_dim_numbers.push(n);
+      }
+    }
+    if (not_dim_numbers.length > 0) {
+      for (var j = 0; j < toc_items.length; j++) {
+        if (not_dim_numbers.indexOf(toc_items[j].number) === -1) {
+          toc_items[j].dim_class = ' dimmed3';
+        }
+      }
+    }
+
+    // Build HTML for TOC
+    var toc_html = '<div class="remark-toc">'
+                 +   '<div class="toc-sidebar">'
+                 +     '<div class="toc-title-en unselectable">CONTENTS</div>'
+                 +     '<div class="toc-title-cn unselectable">目录</div>'
+                 +   '</div>'
+                 +   '<div class="toc-content">';
+
+    for (var j = 0; j < toc_items.length; j++) {
+      toc_html += '<div class="toc-item' + toc_items[j].dim_class + '">'
+                +   '<div class="toc-number unselectable">' + toc_items[j].number + '</div>'
+                +   '<div class="toc-text-box">' + toc_items[j].text + '</div>'
+                + '</div>';
+    }
+
+    toc_html +=   '</div></div>';
+
+    return toc_html;
+  }
 }
 
 // Rebuild slides and delete previous

@@ -99,6 +99,7 @@ h1 {
   bottom: 30px;
 }
 
+/* Font Sizes */
 .tiny {font-size: 6px;}
 .scriptsize {font-size: 10px;}
 .footnotesize {font-size: 14px;}
@@ -110,6 +111,17 @@ h1 {
 .titlesize {font-size: 45px;}
 .titlelarge {font-size: 60px;}
 .titlehuge {font-size: 100px;}
+
+/* Opacity */
+.dimmed1 {opacity: 0.1;}
+.dimmed2 {opacity: 0.2;}
+.dimmed3 {opacity: 0.3;}
+.dimmed4 {opacity: 0.4;}
+.dimmed5 {opacity: 0.5;}
+.dimmed6 {opacity: 0.6;}
+.dimmed7 {opacity: 0.7;}
+.dimmed8 {opacity: 0.8;}
+.dimmed9 {opacity: 0.9;}
 
 /* Set list and ordered list item spacing */
 .remark-slide-content ul li,
