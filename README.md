@@ -47,6 +47,7 @@ Some new functions are introdued based on the original repository in [BenStigsen
 * New default CSS styles for several Markdown elements (` `` `, `> ...`, table)
 * Several Markdown macros (image scaling, upper case converter, random word selector), and more can be extended in [main.js#L30](https://github.com/Emrys365/RemarkPortable/blob/sjtu/main.js#L30)
   * Obsidian's callout-style block: `![:callout type](...)`, where `type` can be `info`, `note`,`todo`, `tip`, `warn`, `question`, `danger`, `example`, `todo`.
+      * NOTE: You may want to escape the `(`, `)`, `[`, `]` characters as `&#lpar;`, `&#rpar;`, `#lspar;`, and `#rspar;` respectively in the callout syntax, otherwise the callout block may not be rendered correctly.
 * New [content classes](https://github.com/gnab/remark/wiki/Markdown#content-classes) for convenient use
   * colors: `.red[...]`, `.blue[...]`, etc.
   * font styles: `.bold[...]`, `.italic[...]`, `.bolditalic[...]`, `.cute[...]`

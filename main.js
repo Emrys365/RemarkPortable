@@ -75,13 +75,16 @@ function register_macros()
         icon_svg = '';
     }
 
+    // Convert escaped brackets back to normal brackets `(` and `)` for markdown parsing
+    var content = this.replace(/&#lpar;/g, '(').replace(/&#rpar;/g, ')').replace(/&#lspar;/g, '[').replace(/&#rspar;/g, ']');
+
     return '<div class="callout callout-' + type + '">'
          +   '<div class="callout-title" dir="auto">'
          +     '<div class="callout-icon">' + icon_svg + '</div>'
          +     '<div class="callout-title-inner">' + title + '</div>'
          +   '</div>'
          +   '<div class="callout-content">'
-         +     remark.convert(this)
+         +     remark.convert(content)
          +   '</div>'
          + '</div>';
   }
@@ -113,16 +116,11 @@ function register_macros()
       if (match) {
         num++;
         var text = match[2];
-        // Extract 【text】（link） if exists
-        var link_match = text.match(/^【(.*)】（(.*)）$/);
-        if (link_match) {
-          var display_text = link_match[1];
-          var link = link_match[2];
-          text = '<a href="' + link + '">' + remark.convert(display_text) + '</a>'
-        }
+        // Convert escaped brackets back to normal brackets `(` and `)` for markdown parsing
+        text = text.replace(/&#lpar;/g, '(').replace(/&#rpar;/g, ')').replace(/&#lspar;/g, '[').replace(/&#rspar;/g, ']');
         toc_items.push({
           number: num,
-          text: text,
+          text: remark.convert(text),
           dim_class: ''
         });
       }
