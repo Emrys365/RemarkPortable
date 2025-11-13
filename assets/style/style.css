@@ -184,7 +184,7 @@ h1 {
 
 
 .remark-slide-content .remark-code {
-  max-height: calc(100vh - 520px);
+  max-height: calc(100vh - 400px);
   overflow-y: auto;
 }
 
