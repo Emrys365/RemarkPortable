@@ -1,5 +1,202 @@
 var slideshow;
 
+function init_callout_steps(slideshowInstance)
+{
+  if (window.__calloutStepsInitialized) {
+    return;
+  }
+  window.__calloutStepsInitialized = true;
+
+  function getCurrentSlideRoot()
+  {
+    return document.querySelector('.remark-visible .remark-slide-content');
+  }
+
+  function revealNextCalloutStep()
+  {
+    var root = getCurrentSlideRoot();
+    if (!root) {
+      return false;
+    }
+
+    var callouts = root.querySelectorAll('.callout.has-steps');
+    for (var i = 0; i < callouts.length; i++) {
+      var hiddenFragments = callouts[i].querySelectorAll('.callout-fragment[data-step][hidden]');
+      if (!hiddenFragments.length) {
+        continue;
+      }
+
+      var nextStep = Infinity;
+      for (var j = 0; j < hiddenFragments.length; j++) {
+        var stepValue = parseInt(hiddenFragments[j].getAttribute('data-step'), 10);
+        if (!isNaN(stepValue) && stepValue < nextStep) {
+          nextStep = stepValue;
+        }
+      }
+
+      if (nextStep !== Infinity) {
+        var nextStepFragments = callouts[i].querySelectorAll('.callout-fragment[data-step="' + nextStep + '"]');
+        for (var k = 0; k < nextStepFragments.length; k++) {
+          nextStepFragments[k].removeAttribute('hidden');
+          nextStepFragments[k].classList.add('is-visible');
+        }
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function hidePreviousCalloutStep()
+  {
+    var root = getCurrentSlideRoot();
+    if (!root) {
+      return false;
+    }
+
+    var callouts = root.querySelectorAll('.callout.has-steps');
+    for (var i = callouts.length - 1; i >= 0; i--) {
+      var visibleFragments = callouts[i].querySelectorAll('.callout-fragment[data-step]:not([hidden])');
+      var maxStep = 0;
+
+      for (var j = 0; j < visibleFragments.length; j++) {
+        var stepValue = parseInt(visibleFragments[j].getAttribute('data-step'), 10);
+        if (!isNaN(stepValue) && stepValue > maxStep) {
+          maxStep = stepValue;
+        }
+      }
+
+      if (maxStep > 0) {
+        var maxStepFragments = callouts[i].querySelectorAll('.callout-fragment[data-step="' + maxStep + '"]');
+        for (var k = 0; k < maxStepFragments.length; k++) {
+          maxStepFragments[k].setAttribute('hidden', 'hidden');
+          maxStepFragments[k].classList.remove('is-visible');
+        }
+        return true;
+      }
+    }
+    return false;
+  }
+
+  var forwardKeys = {
+    'ArrowRight': true,
+    'ArrowDown': true,
+    'PageDown': true,
+    'Enter': true,
+    ' ': true,
+  };
+
+  var backwardKeys = {
+    'ArrowLeft': true,
+    'ArrowUp': true,
+    'PageUp': true,
+    'Backspace': true,
+  };
+
+  document.addEventListener('keydown', function (event) {
+    if (event.metaKey || event.ctrlKey || event.altKey) {
+      return;
+    }
+
+    if (forwardKeys[event.key] && revealNextCalloutStep()) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+
+    if (backwardKeys[event.key] && hidePreviousCalloutStep()) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  }, true);
+
+  if (slideshowInstance && typeof slideshowInstance.on === 'function') {
+    slideshowInstance.on('showSlide', function () {
+      var root = getCurrentSlideRoot();
+      if (!root) {
+        return;
+      }
+
+      var callouts = root.querySelectorAll('.callout.has-steps');
+      for (var i = 0; i < callouts.length; i++) {
+        var fragments = callouts[i].querySelectorAll('.callout-fragment[data-step]');
+        for (var j = 0; j < fragments.length; j++) {
+          var stepValue = parseInt(fragments[j].getAttribute('data-step'), 10);
+          if (stepValue === 0) {
+            fragments[j].removeAttribute('hidden');
+            fragments[j].classList.add('is-visible');
+          } else {
+            fragments[j].setAttribute('hidden', 'hidden');
+            fragments[j].classList.remove('is-visible');
+          }
+        }
+      }
+    });
+  }
+}
+
+function unescape_inside_macro(text)
+{
+  return text
+    .replace(/&#lpar;/g, '(')
+    .replace(/&#rpar;/g, ')')
+    .replace(/&#lspar;/g, '[')
+    .replace(/&#rspar;/g, ']')
+    .replace(/&#lcpar;/g, '{')
+    .replace(/&#rcpar;/g, '}');
+}
+
+function render_callout_with_steps(content)
+{
+  var marker = 'CALLSTEP_MARKER';
+  var markerized_content = content.replace(/^--\s*$/gm, '<!--' + marker + '-->');
+  var html = remark.convert(markerized_content);
+  var container = document.createElement('div');
+  var max_step = 0;
+
+  container.innerHTML = html;
+
+  function walk(node, current_step)
+  {
+    var child = node.firstChild;
+    var step = current_step;
+
+    while (child) {
+      var next = child.nextSibling;
+
+      if (child.nodeType === 8 && child.nodeValue && child.nodeValue.trim() === marker) {
+        step += 1;
+        if (step > max_step) {
+          max_step = step;
+        }
+        node.removeChild(child);
+      } else {
+        if (child.nodeType === 1) {
+          child.classList.add('callout-fragment');
+          child.setAttribute('data-step', String(step));
+          if (step === 0) {
+            child.classList.add('is-visible');
+            child.removeAttribute('hidden');
+          } else {
+            child.setAttribute('hidden', 'hidden');
+          }
+          step = walk(child, step);
+        }
+      }
+
+      child = next;
+    }
+
+    return step;
+  }
+
+  walk(container, 0);
+
+  return {
+    html: container.innerHTML,
+    has_steps: max_step > 0
+  };
+}
+
 // Load file and read content
 function loadFile(event)
 {
@@ -35,6 +232,20 @@ function register_macros()
     // Usage: ![:scale 50%](/xxx/image)
     var url = this;
     return '<img src="' + url + '" style="width: ' + percentage + '" />';
+  };
+
+  remark.macros.olstart = function (start) {
+    // Usage: ![:olstart 7](1. item a\n2. item b)
+    var parsed_start = parseInt(start, 10);
+    var list_start = isNaN(parsed_start) || parsed_start < 1 ? 1 : parsed_start;
+    var content = unescape_inside_macro(this);
+
+    var html = remark.convert(content);
+    // Only add start attribute if there is an ordered list and it should only change the first one if there are multiple lists (nested or separate)
+    if (/<ol(?:\s[^>]*)?>/.test(html) && !/<ol[^>]*\sstart=/.test(html)) {
+      html = html.replace(/<ol(\s[^>]*)?>/, '<ol$1 start="' + list_start + '">');
+    }
+    return html;
   };
 
   remark.macros.callout = function () {
@@ -76,15 +287,26 @@ function register_macros()
     }
 
     // Convert escaped brackets back to normal brackets `(` and `)` for markdown parsing
-    var content = this.replace(/&#lpar;/g, '(').replace(/&#rpar;/g, ')').replace(/&#lspar;/g, '[').replace(/&#rspar;/g, ']');
+    var content = unescape_inside_macro(this);
 
-    return '<div class="callout callout-' + type + '">'
+    var callout_content_html = '';
+    var has_steps = false;
+
+    if (/^\s*--\s*$/m.test(content)) {
+      var rendered_steps = render_callout_with_steps(content);
+      callout_content_html = rendered_steps.html;
+      has_steps = rendered_steps.has_steps;
+    } else {
+      callout_content_html = remark.convert(content);
+    }
+
+    return '<div class="callout callout-' + type + (has_steps ? ' has-steps' : '') + '">' 
          +   '<div class="callout-title" dir="auto">'
          +     '<div class="callout-icon">' + icon_svg + '</div>'
          +     '<div class="callout-title-inner">' + title + '</div>'
          +   '</div>'
          +   '<div class="callout-content">'
-         +     remark.convert(content)
+         +     callout_content_html
          +   '</div>'
          + '</div>';
   }
@@ -92,14 +314,14 @@ function register_macros()
   remark.macros.toc = function () {
     // Usage: ![:toc num1, num2, ...](lines of toc content in markdown)
     // The content lines should start with *, -, +, >, or numbered list like 1., 2., etc.
-    // To add link to a TOC item, use the format: 【text】（link）
+    // To add link to a TOC item, use the format: [text]&#lpar;#link$#rpar; where `#link` is the target slide's name or id, and `text` is the display text for this TOC item.
     //
     // Example:
     // ![:toc 2,4](
-    // * 【Introduction】（#intro）
-    // * 【Usage】（#usage）
-    // * 【Examples】（#examples）
-    // * 【Conclusion】（#conclusion）
+    // * [Introduction]&#lpar;#intro$#rpar;
+    // * [Usage]&#lpar;#usage$#rpar;
+    // * [Examples]&#lpar;#examples$#rpar;
+    // * [Conclusion]&#lpar;#conclusion$#rpar;
     // )
     // 
     // Note: We cannot support standard markdown link format [text](link) here due to parsing issues.
@@ -117,7 +339,7 @@ function register_macros()
         num++;
         var text = match[2];
         // Convert escaped brackets back to normal brackets `(` and `)` for markdown parsing
-        text = text.replace(/&#lpar;/g, '(').replace(/&#rpar;/g, ')').replace(/&#lspar;/g, '[').replace(/&#rspar;/g, ']');
+        text = unescape_inside_macro(text);
         toc_items.push({
           number: num,
           text: remark.convert(text),
@@ -216,6 +438,13 @@ function loadContent()
   });
   // slideshow = remark.create({ratio: "16:9"});
   // slideshow.gotoFirstSlide();         // uncomment this line to always start from the first slide
+
+  init_callout_steps(slideshow);
+
+  // Re-typeset MathJax after remark creates slides from textarea content
+  if (typeof MathJax !== 'undefined') {
+    MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+  }
 }
 
 
