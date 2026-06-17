@@ -134,8 +134,7 @@ function init_callout_steps(slideshowInstance)
   }
 }
 
-function unescape_inside_macro(text)
-{
+function unescape_inside_macro(text) {
   return text
     .replace(/&#lpar;/g, '(')
     .replace(/&#rpar;/g, ')')
@@ -145,10 +144,63 @@ function unescape_inside_macro(text)
     .replace(/&#rcpar;/g, '}');
 }
 
+function inline_step_markers(content, marker) {
+  var lines = content.split('\n');
+  var output = [];
+  var fenceToken = null;
+
+  for (var i = 0; i < lines.length; i++) {
+    // Detect fenced code blocks and skip processing lines inside them
+    var fenceMatch = lines[i].match(/^\s*(`{3,}|~{3,})/);
+    if (fenceMatch) {
+      var currentToken = fenceMatch[1].charAt(0);
+      // Switch fence token on/off when encountering the same fence delimiter
+      if (!fenceToken) {
+        fenceToken = currentToken;
+      } else if (fenceToken === currentToken) {
+        fenceToken = null;
+      }
+      output.push(lines[i]);
+      continue;
+    }
+
+    if (fenceToken) {
+      output.push(lines[i]);
+      continue;
+    }
+
+    // Replace `--` with the marker and merge it to the end of the previous line if possible, otherwise keep it as a separate line.
+    // This allows step markers to be placed inline in the markdown content without affecting the layout when rendered.
+    if (/^--\s*$/.test(lines[i])) {
+      var commentMarker = '<!--' + marker + '-->';
+      var merged = false;
+
+      for (var j = output.length - 1; j >= 0; j--) {
+        if (!/^\s*$/.test(output[j])) {
+          // Avoid appending marker to fence delimiter lines.
+          if (/^\s*(`{3,}|~{3,})/.test(output[j])) break;
+          output[j] += commentMarker;
+          merged = true;
+          break;
+        }
+      }
+
+      if (!merged) {
+        output.push(commentMarker);
+      }
+      continue;
+    }
+
+    output.push(lines[i]);
+  }
+
+  return output.join('\n');
+}
+
 function render_callout_with_steps(content)
 {
   var marker = 'CALLSTEP_MARKER';
-  var markerized_content = content.replace(/^--\s*$/gm, '<!--' + marker + '-->');
+  var markerized_content = inline_step_markers(content, marker);
   var html = remark.convert(markerized_content);
   var container = document.createElement('div');
   var max_step = 0;
