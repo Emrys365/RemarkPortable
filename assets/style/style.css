@@ -128,6 +128,14 @@ h1 {
 .hover_img a span { position:absolute; display:none; z-index:99; }
 .hover_img a:hover span { display:block; }
 
+/* Hide link styling inside a container */
+.hidelinks a,
+.hidelinks a:visited,
+.hidelinks a:hover,
+.hidelinks a:active {
+  color: inherit;
+  text-decoration: none;
+}
 
 /* Set list and ordered list item spacing */
 .remark-slide-content ul li,

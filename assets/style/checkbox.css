@@ -1,0 +1,57 @@
+/* Checkbox list styles for remark `.checkbox[]` blocks */
+
+.remark-slide-content .checkbox ul,
+.remark-slide-content .checkbox ol {
+  list-style: none;
+  margin: 0.2em 0 0.6em 0;
+  padding-left: 0;
+}
+
+.remark-slide-content .checkbox li {
+  position: relative;
+  margin: 0.35em 0;
+  padding-left: 1.6em;
+}
+
+.remark-slide-content .checkbox li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.2em;
+  width: 0.86em;
+  height: 0.86em;
+  border: 2px solid #6e7781;
+  border-radius: 0.2em;
+  background: transparent;
+  box-sizing: border-box;
+}
+
+/* Mark checked items with `.checked[...]` inside list item */
+.remark-slide-content .checkbox li:has(.checked)::before {
+  border-color: #8c959f;
+  background: #8c959f;
+}
+
+/* Draw check mark with a second pseudo element (✓) to keep box size identical */
+.remark-slide-content .checkbox li:has(.checked)::after {
+  content: "";
+  position: absolute;
+  left: 0.24em;
+  top: 0.36em;
+  width: 0.28em;
+  height: 0.48em;
+  border-right: 0.14em solid #ffffff;
+  border-bottom: 0.14em solid #ffffff;
+  transform: rotate(45deg);
+  box-sizing: border-box;
+}
+
+.remark-slide-content .checkbox li:has(.checked) {
+  opacity: 0.82;
+}
+
+/* 
+.remark-slide-content .checkbox li .checked {
+  text-decoration: line-through;
+}
+*/
