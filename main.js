@@ -286,18 +286,76 @@ function register_macros()
     return '<img src="' + url + '" style="width: ' + percentage + '" />';
   };
 
-  remark.macros.olstart = function (start) {
-    // Usage: ![:olstart 7](1. item a\n2. item b)
+  remark.macros.olstart = function (start, indent) {
+    // Usage: ![:olstart 7, 1](1. item a\n2. item b)
     var parsed_start = parseInt(start, 10);
     var list_start = isNaN(parsed_start) || parsed_start < 1 ? 1 : parsed_start;
+    var parsed_indent = parseInt(indent, 10);
+    var list_indent = isNaN(parsed_indent) || parsed_indent < 0 ? 0 : parsed_indent;
     var content = unescape_inside_macro(this);
 
     var html = remark.convert(content);
-    // Only add start attribute if there is an ordered list and it should only change the first one if there are multiple lists (nested or separate)
-    if (/<ol(?:\s[^>]*)?>/.test(html) && !/<ol[^>]*\sstart=/.test(html)) {
-      html = html.replace(/<ol(\s[^>]*)?>/, '<ol$1 start="' + list_start + '">');
+    var container = document.createElement('div');
+    container.innerHTML = html;
+
+    // Only change the first ordered list if it does not already define a start value.
+    var first_ol = container.querySelector('ol');
+    if (first_ol && !first_ol.hasAttribute('start')) {
+      first_ol.setAttribute('start', String(list_start));
     }
-    return html;
+
+    // Indent only top-level lists (lists not nested under an li element).
+    if (list_indent > 0) {
+      var indent_em = list_indent * 2;
+      var lists = container.querySelectorAll('ol, ul');
+      for (var i = 0; i < lists.length; i++) {
+        var parent = lists[i].parentElement;
+        if (parent && parent.tagName && parent.tagName.toLowerCase() === 'li') {
+          continue;
+        }
+
+        lists[i].style.marginLeft = indent_em + 'em';
+      }
+    }
+
+    return container.innerHTML;
+  };
+
+  remark.macros.bullet = function (bullet, color, gap) {
+    // Usage: ![:bullet ★, #e74c3c, 0.8em](- item a\n- item b)
+    var bullet_char = unescape_inside_macro((bullet || '•').trim()) || '•';
+
+    var bullet_color = (color || '').trim() || null;
+    var bullet_gap = (gap || '').trim() || null;
+
+    var content = unescape_inside_macro(this);
+    var html = remark.convert(content);
+    var container = document.createElement('div');
+    container.innerHTML = html;
+
+    // Apply unicode-bullet class directly to top-level ul/ol so they share the
+    // same DOM nesting level as native remark lists and inherit identical indent.
+    var children = container.children;
+    for (var i = 0; i < children.length; i++) {
+      var el = children[i];
+      var tag = el.tagName.toLowerCase();
+      if (tag === 'ul' || tag === 'ol') {
+        el.classList.add('unicode-bullet');
+        if (bullet_gap) {
+          el.style.setProperty('--unicode-bullet-gap', bullet_gap);
+        }
+        if (bullet_color) {
+          el.style.setProperty('--unicode-bullet-color', bullet_color);
+        }
+      }
+    }
+
+    var list_items = container.querySelectorAll('li');
+    for (var j = 0; j < list_items.length; j++) {
+      list_items[j].setAttribute('data-bullet', bullet_char);
+    }
+
+    return container.innerHTML;
   };
 
   remark.macros.callout = function () {
