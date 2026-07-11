@@ -1,0 +1,158 @@
+/* WeChat-style reference card */
+
+/*******************************
+Example:
+
+<div class="ref-card" style="--ref-card-width: 35%; --ref-card-height: 120px;" onclick="window.open('https://www.bilibili.com/video/BV1n62VBxERz', '_blank', 'noopener,noreferrer')">
+  <div class="ref-card__body">
+    <p class="ref-card__title">【冯柯南】一张图，找到位置在哪？人脑VS人工智能！</p>
+    <p class="ref-card__meta">UP 主：冯柯南up</p>
+    <p class="ref-card__meta">播放：25.3 万</p>
+    <img class="ref-card__thumb" src="https://picsum.photos/220/140" alt="链接配图" loading="lazy" />
+  </div>
+  <div class="ref-card__footer">
+    <img class="ref-card__favicon" src="https://www.bilibili.com/favicon.ico" alt="哔哩哔哩" loading="lazy"/>
+    <span class="ref-card__site">哔哩哔哩</span>
+  </div>
+</div>
+
+*******************************/
+
+.ref-card {
+  --card-bg: #f1f1f1;
+  --card-text: #1f1f1f;
+  --card-muted: #9f9f9f;
+  --card-line: #b8b8b8;
+  --card-shadow: 0 5px 7px rgba(0, 0, 0, 0.5);
+  --card-shadow-hover: 0 8px 9px rgba(0, 0, 0, 0.6);
+  --ref-card-width: min(92vw, 620px);
+  --ref-card-height: auto;
+  --ref-card-tail-size: clamp(9px, 3.2cqi, 14px);
+  --ref-card-thumb-size: clamp(30px, 15cqi, 54px);
+  --ref-card-title-gap: clamp(4px, 2.4cqi, 8px);
+  --ref-card-body-row-gap: clamp(1px, 0.6cqi, 3px);
+  --ref-card-footer-margin-top: clamp(12px, 3.0cqi, 16px);
+  --ref-card-footer-padding-top: clamp(3px, 1.6cqi, 6px);
+
+  position: relative;
+  display: block;
+  width: var(--ref-card-width);
+  height: auto;
+  min-height: var(--ref-card-height);
+  container-type: inline-size;
+  container-name: ref-card;
+  padding: clamp(5px, 2.8cqi, 10px) clamp(10px, 5.4cqi, 20px) clamp(3px, 1.8cqi, 7px);
+  border-radius: clamp(8px, 3.2cqi, 12px);
+  background: var(--card-bg);
+  color: var(--card-text);
+  text-decoration: none;
+  cursor: pointer;
+  filter: drop-shadow(var(--card-shadow));
+  transition: transform 0.18s ease, filter 0.18s ease;
+}
+
+.ref-card:hover {
+  transform: translateY(-2px);
+  filter: drop-shadow(var(--card-shadow-hover));
+}
+
+.ref-card:focus-visible {
+  outline: 3px solid #5a9bff;
+  outline-offset: 2px;
+}
+
+/* 右上角小三角 */
+.ref-card::after {
+  content: "";
+  position: absolute;
+  top: clamp(12px, 2.7cqi, 20px);
+  right: calc(var(--ref-card-tail-size) * -0.75);
+  width: var(--ref-card-tail-size);
+  height: calc(var(--ref-card-tail-size) * 1.8);
+  background: var(--card-bg);
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  z-index: 1;
+  transform: translateX(-1px);
+}
+
+.ref-card__body {
+  /* 三格布局：标题独占顶部，副标题与配图分居下方左右格 */
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--ref-card-thumb-size);
+  grid-template-rows: auto auto auto;
+  column-gap: clamp(8px, 3.2cqi, 14px);
+  row-gap: var(--ref-card-body-row-gap);
+  min-height: max(clamp(58px, 25cqi, 98px), calc(var(--ref-card-thumb-size) + var(--ref-card-title-gap)));
+}
+
+.ref-card__title {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  margin: 0 0 var(--ref-card-title-gap);
+  font-size: clamp(6px, 9.4cqi, 20px);
+  line-height: 1.18;
+  font-weight: 400;
+  letter-spacing: 0.2px;
+  color: var(--card-text);
+
+  /* 标题过长时最多两行 */
+  display: -webkit-box;
+  line-clamp: 2;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.ref-card__meta {
+  grid-column: 1;
+  margin: 0;
+  font-size: clamp(4px, 7.4cqi, 15px);
+  line-height: 1.2;
+  font-weight: 400;
+  color: var(--card-muted);
+}
+
+.ref-card__thumb {
+  grid-column: 2;
+  grid-row: 2 / 4;
+  justify-self: end;
+  align-self: center;
+  width: var(--ref-card-thumb-size);
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  object-position: center;
+  border-radius: clamp(2px, 0.7cqi, 4px);
+  background: #ddd;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+.ref-card__footer {
+  display: flex;
+  align-items: center;
+  gap: clamp(6px, 2.7cqi, 10px);
+  margin-top: var(--ref-card-footer-margin-top);
+  padding-top: var(--ref-card-footer-padding-top);
+  border-top: clamp(1px, 0.55cqi, 2px) solid var(--card-line);
+}
+
+.ref-card__favicon {
+  width: clamp(14px, 6.7cqi, 26px);
+  height: clamp(14px, 6.7cqi, 26px);
+  border-radius: clamp(3px, 1.5cqi, 6px);
+  object-fit: cover;
+  flex: 0 0 auto;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+.ref-card__site {
+  font-size: clamp(4px, 8.2cqi, 13px);
+  line-height: 1;
+  font-weight: 400;
+  color: var(--card-muted);
+}
