@@ -134,6 +134,77 @@ function init_callout_steps(slideshowInstance)
   }
 }
 
+function init_print_step_expansion()
+{
+  if (window.__printStepExpansionInitialized) {
+    return;
+  }
+  window.__printStepExpansionInitialized = true;
+
+  var printExpandTimerId = null;
+
+  function expandHiddenFragmentsForPrint()
+  {
+    var hiddenFragments = document.querySelectorAll('.callout.has-steps .callout-fragment[data-step][hidden]');
+    for (var i = 0; i < hiddenFragments.length; i++) {
+      hiddenFragments[i].setAttribute('data-print-hidden', '1');
+      hiddenFragments[i].removeAttribute('hidden');
+      hiddenFragments[i].classList.add('is-visible');
+    }
+  }
+
+  function startPrintExpansionLoop()
+  {
+    expandHiddenFragmentsForPrint();
+    if (printExpandTimerId !== null) {
+      return;
+    }
+    printExpandTimerId = window.setInterval(function () {
+      expandHiddenFragmentsForPrint();
+    }, 120);
+  }
+
+  function stopPrintExpansionLoop()
+  {
+    if (printExpandTimerId !== null) {
+      window.clearInterval(printExpandTimerId);
+      printExpandTimerId = null;
+    }
+  }
+
+  function restoreHiddenFragmentsAfterPrint()
+  {
+    stopPrintExpansionLoop();
+
+    var printExpandedFragments = document.querySelectorAll('.callout.has-steps .callout-fragment[data-print-hidden="1"]');
+    for (var i = 0; i < printExpandedFragments.length; i++) {
+      printExpandedFragments[i].setAttribute('hidden', 'hidden');
+      printExpandedFragments[i].removeAttribute('data-print-hidden');
+      printExpandedFragments[i].classList.remove('is-visible');
+    }
+  }
+
+  window.addEventListener('beforeprint', startPrintExpansionLoop);
+  window.addEventListener('afterprint', restoreHiddenFragmentsAfterPrint);
+
+  if (window.matchMedia) {
+    var printMedia = window.matchMedia('print');
+    var mediaListener = function (event) {
+      if (event.matches) {
+        startPrintExpansionLoop();
+      } else {
+        restoreHiddenFragmentsAfterPrint();
+      }
+    };
+
+    if (printMedia.addEventListener) {
+      printMedia.addEventListener('change', mediaListener);
+    } else if (printMedia.addListener) {
+      printMedia.addListener(mediaListener);
+    }
+  }
+}
+
 function unescape_inside_macro(text) {
   return text
     .replace(/&#lpar;/g, '(')
@@ -550,6 +621,7 @@ function loadContent()
   // slideshow.gotoFirstSlide();         // uncomment this line to always start from the first slide
 
   init_callout_steps(slideshow);
+  init_print_step_expansion();
 
   // Re-typeset MathJax after remark creates slides from textarea content
   if (typeof MathJax !== 'undefined') {
