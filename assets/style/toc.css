@@ -20,9 +20,11 @@
   display: flex;
   flex-direction: row;
   align-items: center;
+  flex: 0 0 auto;
   font-weight: bold;
   margin-right: 60px;
   padding: 16px 20px;
+  box-sizing: border-box;
 }
 .remark-toc .toc-sidebar::before,
 .remark-toc .toc-sidebar::after {
@@ -45,8 +47,12 @@
 }
 
 .remark-toc .toc-sidebar .toc-title-cn {
+  display: inline-block;
+  -webkit-writing-mode: vertical-rl;
   writing-mode: vertical-rl;
+  -webkit-text-orientation: upright;
   text-orientation: upright;
+  white-space: nowrap;
   font-size: 72px;
   font-weight: bold;
   margin-top: 10px;
@@ -55,18 +61,29 @@
 }
 
 .remark-toc .toc-sidebar .toc-title-en {
+  display: inline-block;
+  -webkit-writing-mode: vertical-rl;
   writing-mode: vertical-rl;
+  -webkit-text-orientation: mixed;
   text-orientation: mixed;
+  white-space: nowrap;
   font-size: 24px;
   letter-spacing: 1px;
-  margin-left: -25px; /* get closer to 「 on the left */
-  margin-top: 50px;   /* get closer to 「 below */
+  margin-left: 0;
+  margin-top: 0;
+  transform: translate(-10px, 25px); /* Slightly move right and up; Safari handles transform offset more consistently than vertical-text margins */
 }
 
 /* Right Content List */
 .remark-toc .toc-content {
   display: flex;
   flex-direction: column;
+}
+/* Fallback for browsers without :has support (e.g. older Safari). */
+@supports not selector(:has(*)) {
+  .remark-toc .toc-content {
+    gap: 25px;
+  }
 }
 .remark-toc .toc-content:has(> :nth-child(2)) {
   gap: 55px;
