@@ -1,5 +1,12 @@
 var slideshow;
 
+var presentation_config = {
+  // print_animation:
+  // - 'expand': print all animation fragments on the same slide page
+  // - 'split': split one animated slide into multiple print pages by animation step
+  print_animation: 'expand'
+};
+
 function init_callout_steps(slideshowInstance)
 {
   if (window.__calloutStepsInitialized) {
@@ -134,14 +141,335 @@ function init_callout_steps(slideshowInstance)
   }
 }
 
-function init_print_step_expansion()
+function init_print_step_expansion(config)
 {
   if (window.__printStepExpansionInitialized) {
     return;
   }
   window.__printStepExpansionInitialized = true;
 
+  var printAnimationMode = (config && config.print_animation === 'split') ? 'split' : 'expand';
   var printExpandTimerId = null;
+  var detachedSlidesForPrint = [];
+  var printSessionActive = false;
+
+  function clearNativePrintHiddenSlides()
+  {
+    var hiddenSlides = document.querySelectorAll('.remark-slide-container.print-animation-native-hidden');
+    for (var i = 0; i < hiddenSlides.length; i++) {
+      hiddenSlides[i].classList.remove('print-animation-native-hidden');
+    }
+  }
+
+  function clearEmptyPrintHiddenSlides()
+  {
+    var hiddenSlides = document.querySelectorAll('.remark-slide-container.print-animation-empty-hidden');
+    for (var i = 0; i < hiddenSlides.length; i++) {
+      hiddenSlides[i].classList.remove('print-animation-empty-hidden');
+    }
+  }
+
+  function clearLastPrintableMarker()
+  {
+    var marked = document.querySelectorAll('.remark-slide-container.print-animation-last-visible');
+    for (var i = 0; i < marked.length; i++) {
+      marked[i].classList.remove('print-animation-last-visible');
+    }
+  }
+
+  function restoreDetachedSlidesAfterPrint()
+  {
+    if (!detachedSlidesForPrint.length) {
+      return;
+    }
+
+    for (var i = 0; i < detachedSlidesForPrint.length; i++) {
+      var record = detachedSlidesForPrint[i];
+      if (!record || !record.parent || !record.slide) {
+        continue;
+      }
+
+      if (record.nextSibling && record.nextSibling.parentNode === record.parent) {
+        record.parent.insertBefore(record.slide, record.nextSibling);
+      } else {
+        record.parent.appendChild(record.slide);
+      }
+    }
+
+    detachedSlidesForPrint = [];
+  }
+
+  function detachNonPrintableSlidesForPrint()
+  {
+    restoreDetachedSlidesAfterPrint();
+
+    var slides = document.querySelectorAll('.remark-slide-container');
+    for (var i = 0; i < slides.length; i++) {
+      var slide = slides[i];
+      if (!slide || !slide.parentNode) {
+        continue;
+      }
+
+      var shouldDetach = false;
+
+      if (slide.classList.contains('print-animation-original-hidden')) {
+        shouldDetach = true;
+      }
+      if (slide.classList.contains('print-animation-native-hidden')) {
+        shouldDetach = true;
+      }
+      if (slide.classList.contains('print-animation-empty-hidden')) {
+        shouldDetach = true;
+      }
+
+      var content = slide.querySelector('.remark-slide-content');
+      if (!shouldDetach && !hasPrintableContent(content)) {
+        shouldDetach = true;
+      }
+
+      if (!shouldDetach) {
+        continue;
+      }
+
+      detachedSlidesForPrint.push({
+        parent: slide.parentNode,
+        nextSibling: slide.nextSibling,
+        slide: slide
+      });
+      slide.parentNode.removeChild(slide);
+    }
+  }
+
+  function hasPrintableContent(slideContent)
+  {
+    if (!slideContent) {
+      return false;
+    }
+
+    var sandbox = slideContent.cloneNode(true);
+    var metaNodes = sandbox.querySelectorAll('.remark-slide-number, .remark-slide-notes');
+    for (var m = 0; m < metaNodes.length; m++) {
+      if (metaNodes[m].parentNode) {
+        metaNodes[m].parentNode.removeChild(metaNodes[m]);
+      }
+    }
+
+    var hiddenNodes = sandbox.querySelectorAll('[hidden], [aria-hidden="true"]');
+    for (var i = 0; i < hiddenNodes.length; i++) {
+      if (hiddenNodes[i].parentNode) {
+        hiddenNodes[i].parentNode.removeChild(hiddenNodes[i]);
+      }
+    }
+
+    var text = (sandbox.textContent || '').replace(/\s+/g, '');
+    if (text.length > 0) {
+      return true;
+    }
+
+    return !!sandbox.querySelector('img,svg,canvas,video,iframe,object,embed,table,hr');
+  }
+
+  function hideEmptySlidesForPrint()
+  {
+    clearEmptyPrintHiddenSlides();
+
+    var slides = document.querySelectorAll('.remark-slide-container');
+    for (var i = 0; i < slides.length; i++) {
+      if (slides[i].classList.contains('print-animation-original-hidden')) {
+        continue;
+      }
+
+      var content = slides[i].querySelector('.remark-slide-content');
+      if (!hasPrintableContent(content)) {
+        slides[i].classList.add('print-animation-empty-hidden');
+      }
+    }
+  }
+
+  function markLastPrintableSlide()
+  {
+    clearLastPrintableMarker();
+
+    var slides = document.querySelectorAll('.remark-slide-container');
+    for (var i = slides.length - 1; i >= 0; i--) {
+      if (slides[i].classList.contains('print-animation-original-hidden')) {
+        continue;
+      }
+      if (slides[i].classList.contains('print-animation-native-hidden')) {
+        continue;
+      }
+      if (slides[i].classList.contains('print-animation-empty-hidden')) {
+        continue;
+      }
+
+      var content = slides[i].querySelector('.remark-slide-content');
+      if (!hasPrintableContent(content)) {
+        continue;
+      }
+
+      slides[i].classList.add('print-animation-last-visible');
+      break;
+    }
+  }
+
+  function normalizePrintCloneVisibility(clone)
+  {
+    if (!clone) {
+      return;
+    }
+
+    clone.classList.remove('remark-visible');
+    clone.classList.remove('remark-fading');
+    clone.removeAttribute('aria-hidden');
+
+    if (clone.style) {
+      clone.style.display = '';
+      clone.style.visibility = '';
+      clone.style.opacity = '';
+    }
+  }
+
+  function hideNativeContinuedSlidesForExpand()
+  {
+    clearNativePrintHiddenSlides();
+
+    if (!slideshow || typeof slideshow.getSlides !== 'function') {
+      return;
+    }
+
+    var slides = slideshow.getSlides();
+    var containers = document.querySelectorAll('.remark-slide-container');
+    var limit = Math.min(slides.length, containers.length);
+    var index = 0;
+
+    while (index < limit) {
+      var groupEnd = index;
+
+      while (
+        groupEnd + 1 < limit &&
+        slides[groupEnd + 1] &&
+        slides[groupEnd + 1].properties &&
+        slides[groupEnd + 1].properties.continued === 'true'
+      ) {
+        groupEnd += 1;
+      }
+
+      for (var k = index; k < groupEnd; k++) {
+        containers[k].classList.add('print-animation-native-hidden');
+      }
+
+      index = groupEnd + 1;
+    }
+  }
+
+  function getCalloutMaxStep(scope)
+  {
+    var fragments = scope.querySelectorAll('.callout.has-steps .callout-fragment[data-step]');
+    var maxStep = 0;
+    for (var i = 0; i < fragments.length; i++) {
+      var value = parseInt(fragments[i].getAttribute('data-step'), 10);
+      if (!isNaN(value) && value > maxStep) {
+        maxStep = value;
+      }
+    }
+    return maxStep;
+  }
+
+  function applyStepState(scope, step)
+  {
+    var fragments = scope.querySelectorAll('.callout.has-steps .callout-fragment[data-step]');
+    for (var i = 0; i < fragments.length; i++) {
+      var value = parseInt(fragments[i].getAttribute('data-step'), 10);
+      if (!isNaN(value) && value <= step) {
+        fragments[i].removeAttribute('hidden');
+        fragments[i].classList.add('is-visible');
+      } else {
+        fragments[i].setAttribute('hidden', 'hidden');
+        fragments[i].classList.remove('is-visible');
+      }
+    }
+  }
+
+  function prepareSplitPrintSlides()
+  {
+    cleanupSplitPrintSlides();
+    clearNativePrintHiddenSlides();
+
+    var slides = document.querySelectorAll('.remark-slide-container');
+    for (var i = 0; i < slides.length; i++) {
+      if (slides[i].classList.contains('print-animation-clone')) {
+        continue;
+      }
+
+      var content = slides[i].querySelector('.remark-slide-content');
+      if (!content) {
+        continue;
+      }
+
+      var maxStep = getCalloutMaxStep(content);
+      if (maxStep <= 0) {
+        continue;
+      }
+
+      slides[i].classList.add('print-animation-original-hidden');
+
+      var insertAnchor = slides[i];
+      for (var step = 0; step <= maxStep; step++) {
+        var clone = slides[i].cloneNode(true);
+        clone.classList.remove('print-animation-original-hidden');
+        clone.classList.add('print-animation-clone');
+        clone.setAttribute('data-print-step', String(step));
+        normalizePrintCloneVisibility(clone);
+
+        var cloneContent = clone.querySelector('.remark-slide-content');
+        if (cloneContent) {
+          applyStepState(cloneContent, step);
+
+          if (!hasPrintableContent(cloneContent)) {
+            continue;
+          }
+        }
+
+        insertAnchor.parentNode.insertBefore(clone, insertAnchor.nextSibling);
+        insertAnchor = clone;
+      }
+    }
+
+    document.body.classList.add('print-animation-split-mode');
+    hideEmptySlidesForPrint();
+    markLastPrintableSlide();
+    detachNonPrintableSlidesForPrint();
+  }
+
+  function cleanupSplitPrintSlides()
+  {
+    var clones = document.querySelectorAll('.remark-slide-container.print-animation-clone');
+    for (var i = 0; i < clones.length; i++) {
+      if (clones[i].parentNode) {
+        clones[i].parentNode.removeChild(clones[i]);
+      }
+    }
+
+    var originals = document.querySelectorAll('.remark-slide-container.print-animation-original-hidden');
+    for (var j = 0; j < originals.length; j++) {
+      originals[j].classList.remove('print-animation-original-hidden');
+    }
+
+    document.body.classList.remove('print-animation-split-mode');
+    clearEmptyPrintHiddenSlides();
+    clearLastPrintableMarker();
+    restoreDetachedSlidesAfterPrint();
+  }
+
+  function prepareExpandPrintSlides()
+  {
+    cleanupSplitPrintSlides();
+    hideNativeContinuedSlidesForExpand();
+    expandHiddenFragmentsForPrint();
+    hideEmptySlidesForPrint();
+    markLastPrintableSlide();
+    detachNonPrintableSlidesForPrint();
+  }
 
   function expandHiddenFragmentsForPrint()
   {
@@ -155,7 +483,17 @@ function init_print_step_expansion()
 
   function startPrintExpansionLoop()
   {
-    expandHiddenFragmentsForPrint();
+    if (printSessionActive) {
+      return;
+    }
+    printSessionActive = true;
+
+    if (printAnimationMode === 'split') {
+      prepareSplitPrintSlides();
+      return;
+    }
+
+    prepareExpandPrintSlides();
     if (printExpandTimerId !== null) {
       return;
     }
@@ -166,6 +504,12 @@ function init_print_step_expansion()
 
   function stopPrintExpansionLoop()
   {
+    if (printAnimationMode === 'split') {
+      cleanupSplitPrintSlides();
+      clearNativePrintHiddenSlides();
+      return;
+    }
+
     if (printExpandTimerId !== null) {
       window.clearInterval(printExpandTimerId);
       printExpandTimerId = null;
@@ -174,7 +518,16 @@ function init_print_step_expansion()
 
   function restoreHiddenFragmentsAfterPrint()
   {
+    if (!printSessionActive) {
+      return;
+    }
+    printSessionActive = false;
+
     stopPrintExpansionLoop();
+    restoreDetachedSlidesAfterPrint();
+    clearNativePrintHiddenSlides();
+    clearEmptyPrintHiddenSlides();
+    clearLastPrintableMarker();
 
     var printExpandedFragments = document.querySelectorAll('.callout.has-steps .callout-fragment[data-print-hidden="1"]');
     for (var i = 0; i < printExpandedFragments.length; i++) {
@@ -192,8 +545,6 @@ function init_print_step_expansion()
     var mediaListener = function (event) {
       if (event.matches) {
         startPrintExpansionLoop();
-      } else {
-        restoreHiddenFragmentsAfterPrint();
       }
     };
 
@@ -621,7 +972,7 @@ function loadContent()
   // slideshow.gotoFirstSlide();         // uncomment this line to always start from the first slide
 
   init_callout_steps(slideshow);
-  init_print_step_expansion();
+  init_print_step_expansion(presentation_config);
 
   // Re-typeset MathJax after remark creates slides from textarea content
   if (typeof MathJax !== 'undefined') {

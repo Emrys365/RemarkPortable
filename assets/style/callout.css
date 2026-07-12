@@ -80,7 +80,45 @@
   animation: callout-step-fade-in 0.24s ease-out;
 }
 
+/* Print split-mode slide clones are hidden on screen */
+.remark-slide-container.print-animation-clone {
+  display: none !important;
+}
+
 @media print {
+  .remark-slides-area > .remark-slide-container {
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .remark-slides-area > .remark-slide-container:last-child {
+    break-after: auto !important;
+    page-break-after: auto !important;
+  }
+
+  .remark-slides-area > .remark-slide-container.print-animation-last-visible {
+    break-after: auto !important;
+    page-break-after: auto !important;
+  }
+
+  .remark-slide-container.print-animation-empty-hidden {
+    display: none !important;
+  }
+
+  body:not(.print-animation-split-mode) .remark-slide-container.print-animation-native-hidden {
+    display: none !important;
+  }
+
+  body.print-animation-split-mode .remark-slide-container.print-animation-original-hidden {
+    display: none !important;
+  }
+
+  body.print-animation-split-mode .remark-slide-container.print-animation-clone {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
   /* Force all step fragments visible in print (Chrome-safe), while preserving native display semantics */
   .callout.has-steps .callout-fragment[data-step] {
     display: revert !important;
