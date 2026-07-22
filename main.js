@@ -26,9 +26,9 @@ function init_callout_steps(slideshowInstance)
       return false;
     }
 
-    var callouts = root.querySelectorAll('.callout.has-steps');
-    for (var i = 0; i < callouts.length; i++) {
-      var hiddenFragments = callouts[i].querySelectorAll('.callout-fragment[data-step][hidden]');
+    var stepBlocks = root.querySelectorAll('.has-steps');
+    for (var i = 0; i < stepBlocks.length; i++) {
+      var hiddenFragments = stepBlocks[i].querySelectorAll('.callout-fragment[data-step][hidden]');
       if (!hiddenFragments.length) {
         continue;
       }
@@ -42,7 +42,7 @@ function init_callout_steps(slideshowInstance)
       }
 
       if (nextStep !== Infinity) {
-        var nextStepFragments = callouts[i].querySelectorAll('.callout-fragment[data-step="' + nextStep + '"]');
+        var nextStepFragments = stepBlocks[i].querySelectorAll('.callout-fragment[data-step="' + nextStep + '"]');
         for (var k = 0; k < nextStepFragments.length; k++) {
           nextStepFragments[k].removeAttribute('hidden');
           nextStepFragments[k].classList.add('is-visible');
@@ -60,9 +60,9 @@ function init_callout_steps(slideshowInstance)
       return false;
     }
 
-    var callouts = root.querySelectorAll('.callout.has-steps');
-    for (var i = callouts.length - 1; i >= 0; i--) {
-      var visibleFragments = callouts[i].querySelectorAll('.callout-fragment[data-step]:not([hidden])');
+    var stepBlocks = root.querySelectorAll('.has-steps');
+    for (var i = stepBlocks.length - 1; i >= 0; i--) {
+      var visibleFragments = stepBlocks[i].querySelectorAll('.callout-fragment[data-step]:not([hidden])');
       var maxStep = 0;
 
       for (var j = 0; j < visibleFragments.length; j++) {
@@ -73,7 +73,7 @@ function init_callout_steps(slideshowInstance)
       }
 
       if (maxStep > 0) {
-        var maxStepFragments = callouts[i].querySelectorAll('.callout-fragment[data-step="' + maxStep + '"]');
+        var maxStepFragments = stepBlocks[i].querySelectorAll('.callout-fragment[data-step="' + maxStep + '"]');
         for (var k = 0; k < maxStepFragments.length; k++) {
           maxStepFragments[k].setAttribute('hidden', 'hidden');
           maxStepFragments[k].classList.remove('is-visible');
@@ -123,9 +123,9 @@ function init_callout_steps(slideshowInstance)
         return;
       }
 
-      var callouts = root.querySelectorAll('.callout.has-steps');
-      for (var i = 0; i < callouts.length; i++) {
-        var fragments = callouts[i].querySelectorAll('.callout-fragment[data-step]');
+      var stepBlocks = root.querySelectorAll('.has-steps');
+      for (var i = 0; i < stepBlocks.length; i++) {
+        var fragments = stepBlocks[i].querySelectorAll('.callout-fragment[data-step]');
         for (var j = 0; j < fragments.length; j++) {
           var stepValue = parseInt(fragments[j].getAttribute('data-step'), 10);
           if (stepValue === 0) {
@@ -364,7 +364,7 @@ function init_print_step_expansion(config)
 
   function getCalloutMaxStep(scope)
   {
-    var fragments = scope.querySelectorAll('.callout.has-steps .callout-fragment[data-step]');
+    var fragments = scope.querySelectorAll('.has-steps .callout-fragment[data-step]');
     var maxStep = 0;
     for (var i = 0; i < fragments.length; i++) {
       var value = parseInt(fragments[i].getAttribute('data-step'), 10);
@@ -377,7 +377,7 @@ function init_print_step_expansion(config)
 
   function applyStepState(scope, step)
   {
-    var fragments = scope.querySelectorAll('.callout.has-steps .callout-fragment[data-step]');
+    var fragments = scope.querySelectorAll('.has-steps .callout-fragment[data-step]');
     for (var i = 0; i < fragments.length; i++) {
       var value = parseInt(fragments[i].getAttribute('data-step'), 10);
       if (!isNaN(value) && value <= step) {
@@ -473,7 +473,7 @@ function init_print_step_expansion(config)
 
   function expandHiddenFragmentsForPrint()
   {
-    var hiddenFragments = document.querySelectorAll('.callout.has-steps .callout-fragment[data-step][hidden]');
+    var hiddenFragments = document.querySelectorAll('.has-steps .callout-fragment[data-step][hidden]');
     for (var i = 0; i < hiddenFragments.length; i++) {
       hiddenFragments[i].setAttribute('data-print-hidden', '1');
       hiddenFragments[i].removeAttribute('hidden');
@@ -529,7 +529,7 @@ function init_print_step_expansion(config)
     clearEmptyPrintHiddenSlides();
     clearLastPrintableMarker();
 
-    var printExpandedFragments = document.querySelectorAll('.callout.has-steps .callout-fragment[data-print-hidden="1"]');
+    var printExpandedFragments = document.querySelectorAll('.has-steps .callout-fragment[data-print-hidden="1"]');
     for (var i = 0; i < printExpandedFragments.length; i++) {
       printExpandedFragments[i].setAttribute('hidden', 'hidden');
       printExpandedFragments[i].removeAttribute('data-print-hidden');
@@ -619,9 +619,8 @@ function inline_step_markers(content, marker) {
   return output.join('\n');
 }
 
-function render_callout_with_steps(content)
+function render_macro_with_steps(content, marker)
 {
-  var marker = 'CALLSTEP_MARKER';
   var markerized_content = inline_step_markers(content, marker);
   var html = remark.convert(markerized_content);
   var container = document.createElement('div');
@@ -671,6 +670,11 @@ function render_callout_with_steps(content)
   };
 }
 
+function render_callout_with_steps(content)
+{
+  return render_macro_with_steps(content, 'CALLSTEP_MARKER');
+}
+
 // Load file and read content
 function loadFile(event)
 {
@@ -716,7 +720,8 @@ function register_macros()
     var list_indent = isNaN(parsed_indent) || parsed_indent < 0 ? 0 : parsed_indent;
     var content = unescape_inside_macro(this);
 
-    var html = remark.convert(content);
+    var rendered = render_macro_with_steps(content, 'OLSTART_STEP_MARKER');
+    var html = rendered.html;
     var container = document.createElement('div');
     container.innerHTML = html;
 
@@ -740,7 +745,11 @@ function register_macros()
       }
     }
 
-    return container.innerHTML;
+    if (!rendered.has_steps) {
+      return container.innerHTML;
+    }
+
+    return '<div class="olstart-step-wrapper has-steps">' + container.innerHTML + '</div>';
   };
 
   remark.macros.bullet = function (bullet, color, gap) {

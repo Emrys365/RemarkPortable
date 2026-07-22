@@ -71,12 +71,12 @@
   background-color: var(--callout-content-background);
 }
 
-.callout.has-steps .callout-fragment[hidden],
-.callout.has-steps .callout-fragment[data-step][hidden] {
+.has-steps .callout-fragment[hidden],
+.has-steps .callout-fragment[data-step][hidden] {
   display: none !important;
 }
 
-.callout.has-steps .callout-fragment.is-visible {
+.has-steps .callout-fragment.is-visible {
   animation: callout-step-fade-in 0.24s ease-out;
 }
 
@@ -120,15 +120,15 @@
   }
 
   /* Force all step fragments visible in print (Chrome-safe), while preserving native display semantics */
-  .callout.has-steps .callout-fragment[data-step] {
+  .has-steps .callout-fragment[data-step] {
     display: revert !important;
     visibility: visible !important;
     opacity: 1 !important;
   }
 
   /* Backward-compatible fallback for fragments still carrying hidden attr */
-  .callout.has-steps .callout-fragment[hidden],
-  .callout.has-steps .callout-fragment[data-step][hidden] {
+  .has-steps .callout-fragment[hidden],
+  .has-steps .callout-fragment[data-step][hidden] {
     display: revert !important;
     visibility: visible !important;
     opacity: 1 !important;
