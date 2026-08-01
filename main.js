@@ -7,6 +7,98 @@ var presentation_config = {
   print_animation: 'expand'
 };
 
+// Tag an element as an animation fragment belonging to `step`, in its start-of-slide
+// state: step 0 is on screen from the outset, later steps wait to be revealed.
+function set_step_fragment(element, step)
+{
+  element.classList.add('callout-fragment');
+  element.setAttribute('data-step', String(step));
+
+  if (step === 0) {
+    element.classList.add('is-visible');
+    element.removeAttribute('hidden');
+  } else {
+    element.setAttribute('hidden', 'hidden');
+  }
+}
+
+// Elements that legitimately hold no children, so emptiness says nothing about them.
+var VOID_FRAGMENT_TAG = /^(img|svg|canvas|video|iframe|object|embed|hr|br|input|table)$/;
+
+// A separator with nothing before it leaves markdown wrapping the marker in an element
+// of its own. With the marker gone that element is empty, and remark already discards
+// empty paragraphs of its own accord, so discard it here too instead of letting it hold
+// a blank line open for the rest of the animation. Only called for elements that did
+// contain a marker, so genuinely empty markup the author wrote is left alone.
+function drop_if_emptied_by_marker(element)
+{
+  if (!element || !element.parentNode) {
+    return;
+  }
+  if (VOID_FRAGMENT_TAG.test(element.tagName.toLowerCase())) {
+    return;
+  }
+  if (element.firstElementChild || /\S/.test(element.textContent || '')) {
+    return;
+  }
+
+  element.parentNode.removeChild(element);
+}
+
+// On a slide created by a forced page break (`--` + `name:`), remark re-renders the
+// previous slide's content above the break. That inherited content has already been
+// stepped through, so mark its blocks: they start fully revealed and are skipped when
+// stepping, instead of replaying their animation before the new content's.
+function mark_inherited_step_blocks(root)
+{
+  if (!root) {
+    return;
+  }
+
+  var resumeBlocks = root.querySelectorAll('.' + BLOCK_STEP_RESUME_CLASS);
+  var lastResume = resumeBlocks.length ? resumeBlocks[resumeBlocks.length - 1] : null;
+  var stepBlocks = root.querySelectorAll('.has-steps');
+
+  for (var i = 0; i < stepBlocks.length; i++) {
+    var inherited = lastResume &&
+      (lastResume.compareDocumentPosition(stepBlocks[i]) & Node.DOCUMENT_POSITION_PRECEDING);
+
+    if (inherited) {
+      stepBlocks[i].setAttribute('data-steps-inherited', '1');
+    } else {
+      stepBlocks[i].removeAttribute('data-steps-inherited');
+    }
+  }
+}
+
+// Put every step block on a slide into its start-of-slide state: inherited blocks fully
+// revealed, everything else rewound to step 0.
+function apply_step_block_initial_state(root)
+{
+  if (!root) {
+    return;
+  }
+
+  mark_inherited_step_blocks(root);
+
+  var stepBlocks = root.querySelectorAll('.has-steps');
+  for (var i = 0; i < stepBlocks.length; i++) {
+    var inherited = stepBlocks[i].hasAttribute('data-steps-inherited');
+    var fragments = stepBlocks[i].querySelectorAll('.callout-fragment[data-step]');
+
+    for (var j = 0; j < fragments.length; j++) {
+      var stepValue = parseInt(fragments[j].getAttribute('data-step'), 10);
+      if (inherited || stepValue === 0) {
+        fragments[j].removeAttribute('hidden');
+        fragments[j].classList.add('is-visible');
+      } else {
+        fragments[j].setAttribute('hidden', 'hidden');
+        fragments[j].classList.remove('is-visible');
+      }
+    }
+  }
+}
+
 function init_callout_steps(slideshowInstance)
 {
   if (window.__calloutStepsInitialized) {
@@ -14,10 +106,200 @@ function init_callout_steps(slideshowInstance)
   }
   window.__calloutStepsInitialized = true;
 
+  var CALLSTEP_SYNC_KEY = 'remark-callstep-sync';
+  var CALLSTEP_SYNC_KIND = 'callstep-state';
+  var callstepSyncSenderId = String(Date.now()) + '-' + String(Math.random()).slice(2);
+  var callstepSyncChannel = null;
+  var pendingCallstepStateBySlide = {};
+
+  try {
+    if (typeof BroadcastChannel !== 'undefined') {
+      callstepSyncChannel = new BroadcastChannel(CALLSTEP_SYNC_KEY);
+    }
+  } catch (error) {
+    callstepSyncChannel = null;
+  }
+
   function getCurrentSlideRoot()
   {
     return document.querySelector('.remark-visible .remark-slide-content');
   }
+
+  function getCurrentSlideIndex()
+  {
+    var visibleSlide = document.querySelector('.remark-slide-container.remark-visible');
+    if (!visibleSlide) {
+      return -1;
+    }
+
+    var slides = document.querySelectorAll('.remark-slide-container');
+    for (var i = 0; i < slides.length; i++) {
+      if (slides[i] === visibleSlide) {
+        return i;
+      }
+    }
+
+    return -1;
+  }
+
+  function getBlockCurrentStep(block)
+  {
+    var visibleFragments = block.querySelectorAll('.callout-fragment[data-step]:not([hidden])');
+    var maxStep = 0;
+
+    for (var i = 0; i < visibleFragments.length; i++) {
+      var stepValue = parseInt(visibleFragments[i].getAttribute('data-step'), 10);
+      if (!isNaN(stepValue) && stepValue > maxStep) {
+        maxStep = stepValue;
+      }
+    }
+
+    return maxStep;
+  }
+
+  function collectCurrentSlideStepState(root)
+  {
+    var state = {
+      slideIndex: getCurrentSlideIndex(),
+      blockSteps: []
+    };
+
+    if (!root) {
+      return state;
+    }
+
+    var stepBlocks = root.querySelectorAll('.has-steps:not([data-steps-inherited])');
+    for (var i = 0; i < stepBlocks.length; i++) {
+      state.blockSteps.push(getBlockCurrentStep(stepBlocks[i]));
+    }
+
+    return state;
+  }
+
+  function applyStepStateToSlideRoot(root, blockSteps)
+  {
+    if (!root) {
+      return;
+    }
+
+    var stepBlocks = root.querySelectorAll('.has-steps:not([data-steps-inherited])');
+    for (var i = 0; i < stepBlocks.length; i++) {
+      var targetStep = parseInt(blockSteps && blockSteps[i], 10);
+      if (isNaN(targetStep) || targetStep < 0) {
+        targetStep = 0;
+      }
+
+      var fragments = stepBlocks[i].querySelectorAll('.callout-fragment[data-step]');
+      for (var j = 0; j < fragments.length; j++) {
+        var stepValue = parseInt(fragments[j].getAttribute('data-step'), 10);
+        if (!isNaN(stepValue) && stepValue <= targetStep) {
+          fragments[j].removeAttribute('hidden');
+          fragments[j].classList.add('is-visible');
+        } else {
+          fragments[j].setAttribute('hidden', 'hidden');
+          fragments[j].classList.remove('is-visible');
+        }
+      }
+    }
+  }
+
+  function storePendingCallstepState(message)
+  {
+    if (!message || typeof message.slideIndex !== 'number' || message.slideIndex < 0) {
+      return;
+    }
+
+    var existing = pendingCallstepStateBySlide[message.slideIndex];
+    if (!existing || (message.ts || 0) >= (existing.ts || 0)) {
+      pendingCallstepStateBySlide[message.slideIndex] = message;
+    }
+  }
+
+  function applyPendingStateForCurrentSlide()
+  {
+    var currentIndex = getCurrentSlideIndex();
+    if (currentIndex < 0) {
+      return;
+    }
+
+    var pending = pendingCallstepStateBySlide[currentIndex];
+    if (!pending || !pending.blockSteps) {
+      return;
+    }
+
+    applyStepStateToSlideRoot(getCurrentSlideRoot(), pending.blockSteps);
+  }
+
+  function broadcastCurrentStepState(reason)
+  {
+    var state = collectCurrentSlideStepState(getCurrentSlideRoot());
+    if (state.slideIndex < 0) {
+      return;
+    }
+
+    var message = {
+      kind: CALLSTEP_SYNC_KIND,
+      senderId: callstepSyncSenderId,
+      slideIndex: state.slideIndex,
+      blockSteps: state.blockSteps,
+      reason: reason || 'update',
+      ts: Date.now()
+    };
+
+    storePendingCallstepState(message);
+
+    if (callstepSyncChannel) {
+      try {
+        callstepSyncChannel.postMessage(message);
+      } catch (error) {
+        // no-op
+      }
+    }
+
+    try {
+      window.localStorage.setItem(CALLSTEP_SYNC_KEY, JSON.stringify(message));
+      window.localStorage.removeItem(CALLSTEP_SYNC_KEY);
+    } catch (error) {
+      // no-op
+    }
+  }
+
+  function handleIncomingCallstepState(message)
+  {
+    if (!message || message.kind !== CALLSTEP_SYNC_KIND || !message.blockSteps) {
+      return;
+    }
+
+    if (message.senderId === callstepSyncSenderId) {
+      return;
+    }
+
+    storePendingCallstepState(message);
+
+    if (message.slideIndex !== getCurrentSlideIndex()) {
+      return;
+    }
+
+    applyStepStateToSlideRoot(getCurrentSlideRoot(), message.blockSteps);
+  }
+
+  if (callstepSyncChannel) {
+    callstepSyncChannel.addEventListener('message', function (event) {
+      handleIncomingCallstepState(event && event.data);
+    });
+  }
+
+  window.addEventListener('storage', function (event) {
+    if (!event || event.key !== CALLSTEP_SYNC_KEY || !event.newValue) {
+      return;
+    }
+
+    try {
+      handleIncomingCallstepState(JSON.parse(event.newValue));
+    } catch (error) {
+      // no-op
+    }
+  });
 
   function revealNextCalloutStep()
   {
@@ -26,7 +308,7 @@ function init_callout_steps(slideshowInstance)
       return false;
     }
 
-    var stepBlocks = root.querySelectorAll('.has-steps');
+    var stepBlocks = root.querySelectorAll('.has-steps:not([data-steps-inherited])');
     for (var i = 0; i < stepBlocks.length; i++) {
       var hiddenFragments = stepBlocks[i].querySelectorAll('.callout-fragment[data-step][hidden]');
       if (!hiddenFragments.length) {
@@ -47,6 +329,7 @@ function init_callout_steps(slideshowInstance)
           nextStepFragments[k].removeAttribute('hidden');
           nextStepFragments[k].classList.add('is-visible');
         }
+        broadcastCurrentStepState('forward');
         return true;
       }
     }
@@ -60,7 +343,7 @@ function init_callout_steps(slideshowInstance)
       return false;
     }
 
-    var stepBlocks = root.querySelectorAll('.has-steps');
+    var stepBlocks = root.querySelectorAll('.has-steps:not([data-steps-inherited])');
     for (var i = stepBlocks.length - 1; i >= 0; i--) {
       var visibleFragments = stepBlocks[i].querySelectorAll('.callout-fragment[data-step]:not([hidden])');
       var maxStep = 0;
@@ -78,6 +361,7 @@ function init_callout_steps(slideshowInstance)
           maxStepFragments[k].setAttribute('hidden', 'hidden');
           maxStepFragments[k].classList.remove('is-visible');
         }
+        broadcastCurrentStepState('backward');
         return true;
       }
     }
@@ -123,20 +407,137 @@ function init_callout_steps(slideshowInstance)
         return;
       }
 
-      var stepBlocks = root.querySelectorAll('.has-steps');
-      for (var i = 0; i < stepBlocks.length; i++) {
-        var fragments = stepBlocks[i].querySelectorAll('.callout-fragment[data-step]');
-        for (var j = 0; j < fragments.length; j++) {
-          var stepValue = parseInt(fragments[j].getAttribute('data-step'), 10);
-          if (stepValue === 0) {
-            fragments[j].removeAttribute('hidden');
-            fragments[j].classList.add('is-visible');
-          } else {
-            fragments[j].setAttribute('hidden', 'hidden');
-            fragments[j].classList.remove('is-visible');
-          }
+      apply_step_block_initial_state(root);
+      applyPendingStateForCurrentSlide();
+    });
+  }
+}
+
+function init_block_step_divs(slideshowInstance)
+{
+  if (window.__blockStepDivsInitialized) {
+    return;
+  }
+  window.__blockStepDivsInitialized = true;
+
+  function processStepBlock(block)
+  {
+    if (!block || block.classList.contains('has-steps')) {
+      return;
+    }
+
+    var hasMarker = false;
+
+    function isMarkerNode(node)
+    {
+      if (node.nodeType === 8) {
+        return (node.nodeValue || '').trim() === BLOCK_STEP_MARKER;
+      }
+
+      return node.nodeType === 1 && node.tagName &&
+        node.tagName.toLowerCase() === 'p' && (node.textContent || '').trim() === '--';
+    }
+
+    function containsMarker(node)
+    {
+      for (var child = node.firstChild; child; child = child.nextSibling) {
+        if (isMarkerNode(child)) {
+          return true;
+        }
+        if (child.nodeType === 1 && !child.classList.contains('has-steps') && containsMarker(child)) {
+          return true;
         }
       }
+      return false;
+    }
+
+    // Blocks without a separator are left exactly as remark rendered them.
+    var blockHasMarkers = containsMarker(block);
+
+    function walk(node, currentStep)
+    {
+      // A separator placed before any text leaves the marker as the first thing inside
+      // its paragraph, so the steps split that paragraph's own text rather than whole
+      // elements. Text nodes cannot carry data-step, so wrap those a marker has pushed
+      // past `currentStep`; anything still at `currentStep` is covered by the element
+      // around it. The block itself is not a fragment, so its own text always needs one.
+      var isBlockRoot = blockHasMarkers && node === block;
+      var child = node.firstChild;
+      var step = currentStep;
+
+      while (child) {
+        var next = child.nextSibling;
+
+        if (isMarkerNode(child)) {
+          step += 1;
+          hasMarker = true;
+          node.removeChild(child);
+        } else if (child.nodeType === 3) {
+          if ((isBlockRoot || step !== currentStep) && /\S/.test(child.nodeValue || '')) {
+            var span = document.createElement('span');
+            set_step_fragment(span, step);
+            node.replaceChild(span, child);
+            span.appendChild(child);
+          }
+        } else if (child.nodeType === 1 && child.classList.contains('has-steps')) {
+          // Macro-rendered blocks (callout, olstart) computed their own steps already.
+          // Treat them as opaque so we don't overwrite their data-step values.
+        } else if (child.nodeType === 1) {
+          set_step_fragment(child, step);
+          var stepBefore = step;
+          step = walk(child, step);
+          if (step !== stepBefore) {
+            drop_if_emptied_by_marker(child);
+          }
+        }
+
+        child = next;
+      }
+
+      return step;
+    }
+
+    walk(block, 0);
+
+    if (hasMarker) {
+      block.classList.add('has-steps');
+    }
+  }
+
+  function processSlides(scope)
+  {
+    // Process each top-level child of the slide independently (its own step
+    // counter starting at 0), instead of only div[class*="left-column"/"right-column"].
+    // remark's `.class[content]` syntax (e.g. .small[], .midsize[]) never parses `--`
+    // as a slide separator inside its content, so a literal `<p>--</p>` can end up
+    // nested in any class-div, not only left-column/right-column. Keeping each
+    // top-level child as its own block preserves independent step counting between
+    // sibling blocks (e.g. left-column vs. right-column) instead of one shared count.
+    var slideRoots = scope.querySelectorAll('.remark-slide-content');
+    for (var i = 0; i < slideRoots.length; i++) {
+      var children = slideRoots[i].children;
+      for (var j = 0; j < children.length; j++) {
+        processStepBlock(children[j]);
+      }
+    }
+  }
+
+  // Slides are built once, so set every slide's start state up front. Doing it here
+  // rather than only on showSlide covers slides shown before the handler is attached.
+  function applyInitialStates(scope)
+  {
+    var slideRoots = scope.querySelectorAll('.remark-slide-content');
+    for (var i = 0; i < slideRoots.length; i++) {
+      apply_step_block_initial_state(slideRoots[i]);
+    }
+  }
+
+  processSlides(document);
+  applyInitialStates(document);
+
+  if (slideshowInstance && typeof slideshowInstance.on === 'function') {
+    slideshowInstance.on('showSlide', function () {
+      processSlides(document);
     });
   }
 }
@@ -566,10 +967,349 @@ function unescape_inside_macro(text) {
     .replace(/&#rcpar;/g, '}');
 }
 
+var BLOCK_STEP_MARKER = 'BLOCKSTEP_MARKER';
+// Marks the first block of a slide produced by a forced page break, i.e. the boundary
+// between content inherited from the previous slide and this slide's own content.
+var BLOCK_STEP_RESUME_CLASS = 'step-resume';
+
+// Rewrite bare `--` lines inside multi-line `.class[...]` blocks (.small[], .midsize[],
+// .left-column[], ...) into marker comments before remark parses the source.
+// remark only treats `--` as a slide separator at slide top level; inside class-block
+// content it is handed straight to the markdown parser, which swallows it as a setext
+// heading underline (turning the preceding line into an <h2>) instead of producing a
+// step break. Markers survive markdown as comment nodes, which init_block_step_divs
+// then turns into animation steps.
+// Content inside `![:macro](...)` is left alone: those macros run inline_step_markers
+// on their own content and detect steps by testing for bare `--` lines.
+// A `--` immediately followed by a slide-property line (`name: xxx`, ...) means a forced
+// page break naming the new slide rather than an animation step. Inside a class block
+// that cannot work as written, so the open wrappers are closed before the separator and
+// re-opened after the property lines, giving a real named slide with the same styling.
+var SLIDE_PROPERTY_LINE = /^\s*(name|class|layout|count|template|exclude|background-image)\s*:/;
+
+function expand_block_step_markers(text, marker) {
+  if (!text) {
+    return text;
+  }
+
+  var lines = text.split('\n');
+  var output = [];
+  var fenceToken = null;
+  var bracketDepth = 0;
+  var classBlockDepths = [];
+  var macroParenDepth = 0;
+
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+
+    var fenceMatch = line.match(/^\s*(`{3,}|~{3,})/);
+    if (fenceMatch) {
+      var fenceChar = fenceMatch[1].charAt(0);
+      if (!fenceToken) {
+        fenceToken = fenceChar;
+      } else if (fenceToken === fenceChar) {
+        fenceToken = null;
+      }
+      output.push(line);
+      continue;
+    }
+
+    if (fenceToken) {
+      output.push(line);
+      continue;
+    }
+
+    var startsNamedSlide = SLIDE_PROPERTY_LINE.test(lines[i + 1] || '');
+    var isStepSeparator = macroParenDepth === 0 && /^--\s*$/.test(line);
+
+    if (classBlockDepths.length > 0 && isStepSeparator && startsNamedSlide) {
+      // Forced page break inside a class block. remark's class-block lexer has no
+      // separator rule, so `--` here can never start a new slide on its own and the
+      // `name:` line would render as literal text. Close the open wrappers, emit the
+      // real separator with its slide properties, then re-open the same wrappers so
+      // the new slide keeps the same styling.
+      var closers = '';
+      var reopeners = '';
+      for (var c = 0; c < classBlockDepths.length; c++) {
+        closers += ']';
+        // Tag the outermost re-opened wrapper so the runtime can tell the content of
+        // this new slide from the content it inherits from before the break: a `--`
+        // slide is "continued", so everything above this point is shown again and
+        // must not replay its animation.
+        reopeners += c === 0
+          ? classBlockDepths[c].text.replace(/\[$/, '.' + BLOCK_STEP_RESUME_CLASS + '[')
+          : classBlockDepths[c].text;
+      }
+
+      output.push(closers);
+      output.push('--');
+
+      var p = i + 1;
+      while (p < lines.length && SLIDE_PROPERTY_LINE.test(lines[p])) {
+        output.push(lines[p]);
+        p++;
+      }
+
+      output.push(reopeners);
+      i = p - 1;
+      continue;
+    }
+
+    if (classBlockDepths.length > 0 && isStepSeparator && !startsNamedSlide) {
+      // Attach the marker to the end of the previous non-blank line so it lands inside
+      // that line's element, keeping list/paragraph structure intact.
+      var commentMarker = '<!--' + marker + '-->';
+      var mergeIndex = -1;
+
+      for (var j = output.length - 1; j >= 0; j--) {
+        if (!/^\s*$/.test(output[j])) {
+          if (!/^\s*(`{3,}|~{3,})/.test(output[j])) {
+            mergeIndex = j;
+          }
+          break;
+        }
+      }
+
+      if (mergeIndex >= 0) {
+        output[mergeIndex] += commentMarker;
+      } else {
+        output.push(commentMarker);
+      }
+      continue;
+    }
+
+    var inlineCodeFence = 0;
+
+    for (var k = 0; k < line.length; k++) {
+      var ch = line[k];
+
+      if (ch === '`') {
+        var runStart = k;
+        while (k < line.length && line[k] === '`') {
+          k++;
+        }
+        var runLength = k - runStart;
+        k--;
+
+        if (!inlineCodeFence) {
+          inlineCodeFence = runLength;
+        } else if (inlineCodeFence === runLength) {
+          inlineCodeFence = 0;
+        }
+        continue;
+      }
+
+      if (inlineCodeFence) {
+        continue;
+      }
+
+      // Macro content is opaque here: consume it without tracking brackets, so
+      // unbalanced brackets inside a macro cannot corrupt class-block tracking.
+      if (macroParenDepth > 0) {
+        if (ch === '(') {
+          macroParenDepth++;
+        } else if (ch === ')') {
+          macroParenDepth--;
+        }
+        continue;
+      }
+
+      if (ch === '!' && line.slice(k, k + 3) === '![:') {
+        var headerEnd = line.indexOf(']', k);
+        if (headerEnd === -1) {
+          break;
+        }
+        k = headerEnd;
+        if (line.charAt(headerEnd + 1) === '(') {
+          macroParenDepth = 1;
+          k = headerEnd + 1;
+        }
+        continue;
+      }
+
+      if (ch === '[') {
+        // Remember the opening text (".midsize[") so a forced page break can re-open
+        // the same wrappers on the next slide.
+        var classOpen = /((?:\.[A-Za-z0-9_-]+)+)$/.exec(line.slice(0, k));
+        if (classOpen) {
+          classBlockDepths.push({ depth: bracketDepth, text: classOpen[1] + '[' });
+        }
+        bracketDepth++;
+        continue;
+      }
+
+      if (ch === ']') {
+        if (bracketDepth > 0) {
+          bracketDepth--;
+        }
+        if (classBlockDepths.length > 0 && classBlockDepths[classBlockDepths.length - 1].depth === bracketDepth) {
+          classBlockDepths.pop();
+        }
+      }
+    }
+
+    output.push(line);
+  }
+
+  return output.join('\n');
+}
+
+function expand_inline_class_macros(text) {
+  if (!text) {
+    return text;
+  }
+
+  var lines = text.split('\n');
+  var output = [];
+  var fenceToken = null;
+
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    var fenceMatch = line.match(/^\s*(`{3,}|~{3,})/);
+    if (fenceMatch) {
+      var currentToken = fenceMatch[1].charAt(0);
+      if (!fenceToken) {
+        fenceToken = currentToken;
+      } else if (fenceToken === currentToken) {
+        fenceToken = null;
+      }
+
+      output.push(line);
+      continue;
+    }
+
+    if (fenceToken) {
+      output.push(line);
+      continue;
+    }
+
+    var lineOutput = [];
+    var segmentBuffer = '';
+    var inInlineCode = false;
+    var inlineCodeFence = 0;
+
+    function flushSegmentBuffer() {
+      if (!segmentBuffer) {
+        return;
+      }
+
+      var transformed = segmentBuffer;
+      var previous = null;
+
+      do {
+        previous = transformed;
+        transformed = transformed.replace(/(^|[^\w])((?:\.[A-Za-z0-9_-]+)+)\[([^\[\]]*)\]/g, function (match, prefix, classChain, content) {
+          var classNames = classChain.split('.').filter(Boolean).join(' ');
+          return prefix + '<span class="' + classNames + '">' + content + '</span>';
+        });
+      } while (transformed !== previous);
+
+      lineOutput.push(transformed);
+      segmentBuffer = '';
+    }
+
+    for (var j = 0; j < line.length; ) {
+      if (line[j] === '`') {
+        var runStart = j;
+        while (j < line.length && line[j] === '`') {
+          j++;
+        }
+
+        var run = line.slice(runStart, j);
+
+        if (!inInlineCode) {
+          flushSegmentBuffer();
+          lineOutput.push(run);
+          inInlineCode = true;
+          inlineCodeFence = run.length;
+          continue;
+        }
+
+        if (run.length === inlineCodeFence) {
+          lineOutput.push(run);
+          inInlineCode = false;
+          inlineCodeFence = 0;
+        } else {
+          lineOutput.push(run);
+        }
+        continue;
+      }
+
+      if (inInlineCode) {
+        lineOutput.push(line[j]);
+      } else {
+        segmentBuffer += line[j];
+      }
+      j++;
+    }
+
+    flushSegmentBuffer();
+    output.push(lineOutput.join(''));
+  }
+
+  return output.join('\n');
+}
+
+// Index of the last line of a run starting at `start` that holds nothing but HTML
+// comments and whitespace, or -1 if this is not such a run.
+// Those lines render nothing, so they must stay invisible to the step machinery: they
+// may neither absorb a step marker nor pass for the content a leading separator looks
+// for, and the empty paragraph markdown makes of them must not take a step slot.
+// Comments can span lines (these decks use `</span><!--` / `--><span>` to swallow
+// whitespace), so a run counts only when it opens and closes cleanly -- dropping half of
+// a comment would leave everything after it commented out.
+function comment_only_run_end(lines, start) {
+  var in_comment = false;
+  var saw_comment = false;
+
+  for (var i = start; i < lines.length; i++) {
+    var line = lines[i];
+    var j = 0;
+
+    while (j < line.length) {
+      if (in_comment) {
+        var close = line.indexOf('-->', j);
+        if (close === -1) {
+          j = line.length;
+          break;
+        }
+        in_comment = false;
+        j = close + 3;
+        continue;
+      }
+
+      if (line.charAt(j) === '<' && line.substr(j, 4) === '<!--') {
+        in_comment = true;
+        saw_comment = true;
+        j += 4;
+        continue;
+      }
+
+      if (/\S/.test(line.charAt(j))) {
+        return -1;
+      }
+      j++;
+    }
+
+    if (!in_comment) {
+      // Blank lines are meaningful to markdown, so only a run holding a real comment
+      // may be dropped.
+      return saw_comment ? i : -1;
+    }
+  }
+
+  return -1;
+}
+
+// Turn bare `--` lines in a macro's content into marker comments.
+// Returns { text, leading_steps }: `leading_steps` counts the separators that appear
+// before any content, which have no element to attach to and are therefore handled by
+// offsetting the whole step walk instead (see render_macro_with_steps).
 function inline_step_markers(content, marker) {
   var lines = content.split('\n');
   var output = [];
   var fenceToken = null;
+  var leading_steps = 0;
 
   for (var i = 0; i < lines.length; i++) {
     // Detect fenced code blocks and skip processing lines inside them
@@ -591,24 +1331,50 @@ function inline_step_markers(content, marker) {
       continue;
     }
 
+    // Drop lines that render nothing but a comment, so a `--` next to them behaves as
+    // if they were not written at all.
+    if (lines[i].indexOf('<!--') !== -1) {
+      var commentRunEnd = comment_only_run_end(lines, i);
+      if (commentRunEnd !== -1) {
+        i = commentRunEnd;
+        continue;
+      }
+    }
+
     // Replace `--` with the marker and merge it to the end of the previous line if possible, otherwise keep it as a separate line.
     // This allows step markers to be placed inline in the markdown content without affecting the layout when rendered.
     if (/^--\s*$/.test(lines[i])) {
       var commentMarker = '<!--' + marker + '-->';
-      var merged = false;
+      var mergeIndex = -1;
+      var sawContent = false;
 
       for (var j = output.length - 1; j >= 0; j--) {
-        if (!/^\s*$/.test(output[j])) {
-          // Avoid appending marker to fence delimiter lines.
-          if (/^\s*(`{3,}|~{3,})/.test(output[j])) break;
-          output[j] += commentMarker;
-          merged = true;
-          break;
+        if (/^\s*$/.test(output[j])) {
+          continue;
         }
+        sawContent = true;
+        // Avoid appending marker to fence delimiter lines.
+        if (!/^\s*(`{3,}|~{3,})/.test(output[j])) {
+          mergeIndex = j;
+        }
+        break;
       }
 
-      if (!merged) {
+      if (mergeIndex >= 0) {
+        output[mergeIndex] += commentMarker;
+      } else if (sawContent) {
+        // Right after a fenced block. Surround the marker with blank lines so markdown
+        // parses it as a standalone HTML block; without them it is folded into the
+        // paragraph that follows and would mark that paragraph as already visible.
+        output.push('');
         output.push(commentMarker);
+        output.push('');
+      } else {
+        // No content precedes this separator, so there is nothing for the marker to
+        // attach to. Emitting it here does not work: markdown swallows it into the next
+        // block, and remark's single-paragraph unwrap drops it entirely. Count it and
+        // let the step walk start from a later step instead.
+        leading_steps += 1;
       }
       continue;
     }
@@ -616,20 +1382,32 @@ function inline_step_markers(content, marker) {
     output.push(lines[i]);
   }
 
-  return output.join('\n');
+  return {
+    text: output.join('\n'),
+    leading_steps: leading_steps
+  };
 }
 
 function render_macro_with_steps(content, marker)
 {
-  var markerized_content = inline_step_markers(content, marker);
-  var html = remark.convert(markerized_content);
+  var markerized = inline_step_markers(content, marker);
+  var html = remark.convert(markerized.text);
   var container = document.createElement('div');
-  var max_step = 0;
+  // Separators that preceded all content become the starting step: the macro renders
+  // its chrome (a callout's title, say) with an empty body until that step is reached.
+  var max_step = markerized.leading_steps;
+  var has_markers = max_step > 0 || markerized.text.indexOf('<!--' + marker + '-->') !== -1;
 
   container.innerHTML = html;
 
   function walk(node, current_step)
   {
+    // `node` itself already carries `current_step`, so its text only needs its own
+    // wrapper once a marker has moved the counter past that. The container is the
+    // exception: it is not a fragment, so text sitting directly in it has nothing to
+    // carry data-step at all -- which is exactly what a plain-prose macro body looks
+    // like, since remark unwraps a lone top-level paragraph into bare text nodes.
+    var is_container = node === container;
     var child = node.firstChild;
     var step = current_step;
 
@@ -642,17 +1420,19 @@ function render_macro_with_steps(content, marker)
           max_step = step;
         }
         node.removeChild(child);
-      } else {
-        if (child.nodeType === 1) {
-          child.classList.add('callout-fragment');
-          child.setAttribute('data-step', String(step));
-          if (step === 0) {
-            child.classList.add('is-visible');
-            child.removeAttribute('hidden');
-          } else {
-            child.setAttribute('hidden', 'hidden');
-          }
-          step = walk(child, step);
+      } else if (child.nodeType === 3) {
+        if (has_markers && (is_container || step !== current_step) && /\S/.test(child.nodeValue || '')) {
+          var span = document.createElement('span');
+          set_step_fragment(span, step);
+          node.replaceChild(span, child);
+          span.appendChild(child);
+        }
+      } else if (child.nodeType === 1) {
+        set_step_fragment(child, step);
+        var step_before = step;
+        step = walk(child, step);
+        if (step !== step_before) {
+          drop_if_emptied_by_marker(child);
         }
       }
 
@@ -662,7 +1442,7 @@ function render_macro_with_steps(content, marker)
     return step;
   }
 
-  walk(container, 0);
+  walk(container, markerized.leading_steps);
 
   return {
     html: container.innerHTML,
@@ -939,6 +1719,13 @@ function loadContent()
     (x[i]).parentNode.removeChild(x[i]);
   }
 
+  var source = document.getElementById('source');
+  if (source) {
+    source.value = expand_block_step_markers(source.value || source.textContent || '', BLOCK_STEP_MARKER);
+    source.value = expand_inline_class_macros(source.value);
+    source.textContent = source.value;
+  }
+
   register_macros();
 
   slideshow = remark.create({
@@ -981,6 +1768,7 @@ function loadContent()
   // slideshow.gotoFirstSlide();         // uncomment this line to always start from the first slide
 
   init_callout_steps(slideshow);
+  init_block_step_divs(slideshow);
   init_print_step_expansion(presentation_config);
 
   // Re-typeset MathJax after remark creates slides from textarea content
